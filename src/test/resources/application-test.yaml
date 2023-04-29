@@ -1,0 +1,5 @@
+couchdb:
+  client:
+    url: http://localhost:1
+    username: username
+    password: password

@@ -1,0 +1,14 @@
+version: '3.7'
+
+services:
+  couchDb:
+    image: "couchdb:latest"
+    volumes:
+      - "db_data:/opt/couchdb/data"
+    environment:
+      COUCHDB_USER: "admin"
+      COUCHDB_PASSWORD: "password"
+    ports:
+      - "5984:5984"
+volumes:
+  db_data:
