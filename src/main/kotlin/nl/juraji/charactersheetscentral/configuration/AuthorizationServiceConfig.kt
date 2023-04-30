@@ -40,12 +40,11 @@ class AuthorizationServiceConfig {
 
         httpSecurity
             .getConfigurer(OAuth2AuthorizationServerConfigurer::class.java)
+            .authorizationEndpoint { it.consentPage("/oauth2/consent") }
             .oidc(Customizer.withDefaults()) // Enable OpenID Connect 1.0
 
         httpSecurity
-            .exceptionHandling { exceptions ->
-                exceptions.authenticationEntryPoint(LoginUrlAuthenticationEntryPoint("/login"))
-            }
+            .exceptionHandling { it.authenticationEntryPoint(LoginUrlAuthenticationEntryPoint("/login")) }
             .oauth2ResourceServer { it.jwt() }
 
         return httpSecurity.build()

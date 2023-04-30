@@ -26,13 +26,13 @@ class CouchDbPrimerConfiguration(
             .catchOrThrow { it is CouchDbApiException && it.httpStatus == HttpStatus.PRECONDITION_FAILED }
 
         // @formatter:off
-        couchDb.runCatching { createIndex(databaseName, "idx_central_user_username", setOf("username")) }
-        couchDb.runCatching { createIndex(databaseName, "idx_central_oauth_authorization_state", setOf("state")) }
-        couchDb.runCatching { createIndex(databaseName, "idx_central_oauth_authorization_authorization_code_token_value", setOf("authorizationCode.tokenValue")) }
-        couchDb.runCatching { createIndex(databaseName, "idx_central_oauth_authorization_access_token_token_value", setOf("accessToken.tokenValue")) }
-        couchDb.runCatching { createIndex(databaseName, "idx_central_oauth_authorization_refresh_token_token_value", setOf("refreshToken.tokenValue")) }
-        couchDb.runCatching { createIndex(databaseName, "idx_central_oauth_authorization_all_tokens_value_token_value", setOf("authorizationCode.tokenValue", "accessToken.tokenValue", "refreshToken.tokenValue")) }
-        couchDb.runCatching { createIndex(databaseName, "idx_central_authorization_consent_pk", setOf("registeredClientId", "principalName")) }
+        couchDb.createIndex(databaseName, "idx_central_user_username", setOf("username"))
+        couchDb.createIndex(databaseName, "idx_central_oauth_authorization_state", setOf("state"))
+        couchDb.createIndex(databaseName, "idx_central_oauth_authorization_authorization_code_token_value", setOf("authorizationCode.tokenValue"))
+        couchDb.createIndex(databaseName, "idx_central_oauth_authorization_access_token_token_value", setOf("accessToken.tokenValue"))
+        couchDb.createIndex(databaseName, "idx_central_oauth_authorization_refresh_token_token_value", setOf("refreshToken.tokenValue"))
+        couchDb.createIndex(databaseName, "idx_central_oauth_authorization_all_tokens_value_token_value", setOf("authorizationCode.tokenValue", "accessToken.tokenValue", "refreshToken.tokenValue"))
+        couchDb.createIndex(databaseName, "idx_central_authorization_consent_pk", setOf("registeredClientId", "principalName"))
         // @formatter:on
     }
 }

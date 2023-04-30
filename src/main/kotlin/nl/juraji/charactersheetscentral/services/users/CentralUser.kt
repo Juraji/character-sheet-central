@@ -1,4 +1,4 @@
-package nl.juraji.charactersheetscentral.services.oauth
+package nl.juraji.charactersheetscentral.services.users
 
 import nl.juraji.charactersheetscentral.couchcb.support.DocumentIdMeta
 import org.springframework.security.core.GrantedAuthority
