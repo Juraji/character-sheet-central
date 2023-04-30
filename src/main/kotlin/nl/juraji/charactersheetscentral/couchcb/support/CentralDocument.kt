@@ -4,7 +4,7 @@ interface CentralDocument : DocumentIdMeta {
     val modelType: String get() = this::class.simpleName!!
 }
 
-data class JustDocumentMeta(
+data class CentralDocumentMetaData(
     override val id: String?,
     override val rev: String?,
     override val modelType: String = "UNKNOWN",

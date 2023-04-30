@@ -2,6 +2,7 @@ package nl.juraji.charactersheetscentral.configuration
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import nl.juraji.charactersheetscentral.couchcb.support.CouchDbRestTemplateErrorHandler
+import nl.juraji.charactersheetscentral.couchcb.support.CouchDbRestTemplateNotFoundInterceptor
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
@@ -21,12 +22,14 @@ data class CouchCbConfiguration(
     fun couchDbRestTemplate(
         objectMapper: ObjectMapper,
         errorHandler: CouchDbRestTemplateErrorHandler,
+        interceptor: CouchDbRestTemplateNotFoundInterceptor
     ): RestTemplate {
         return RestTemplateBuilder()
             .rootUri(url)
             .basicAuthentication(username, password)
-            .messageConverters(MappingJackson2HttpMessageConverter(objectMapper))
             .errorHandler(errorHandler)
+            .interceptors(interceptor)
+            .messageConverters(MappingJackson2HttpMessageConverter(objectMapper))
             .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON.toString())
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString())
             .build()

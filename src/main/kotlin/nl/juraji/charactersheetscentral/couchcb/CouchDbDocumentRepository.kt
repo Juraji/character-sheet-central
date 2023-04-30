@@ -3,11 +3,12 @@ package nl.juraji.charactersheetscentral.couchcb
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import nl.juraji.charactersheetscentral.couchcb.support.ApiDocumentOperationResult
-import nl.juraji.charactersheetscentral.couchcb.support.DocumentIdMeta
+import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
+import nl.juraji.charactersheetscentral.couchcb.support.SaveAction
 import org.springframework.core.ParameterizedTypeReference
 import kotlin.reflect.KClass
 
-abstract class CouchDbDocumentRepository<T : DocumentIdMeta>(
+abstract class CouchDbDocumentRepository<T : CentralDocument>(
     private val couchDb: CouchDbService
 ) {
     abstract val databaseName: String
@@ -17,17 +18,17 @@ abstract class CouchDbDocumentRepository<T : DocumentIdMeta>(
     fun findDocumentById(documentId: String): T? =
         couchDb.findDocumentById(databaseName, documentId, documentClass)
 
-    fun findOneDocumentBySelector(query: DocumentSelector): T? =
+    fun findOneDocumentBySelector(query: DocumentSelector<T>): T? =
         couchDb.findOneDocumentBySelector(databaseName, query.singleResult(), documentFindTypeRef)
 
-    fun documentExistsBySelector(query: DocumentSelector): Boolean =
+    fun documentExistsBySelector(query: DocumentSelector<T>): Boolean =
         couchDb.documentExistsBySelector(databaseName, query)
 
-    fun findDocumentsBySelector(query: DocumentSelector): List<T> =
+    fun findDocumentsBySelector(query: DocumentSelector<T>): List<T> =
         couchDb.findDocumentBySelector(databaseName, query, documentFindTypeRef)
 
-    fun saveDocument(document: T): ApiDocumentOperationResult =
-        couchDb.saveDocument(databaseName, document)
+    fun saveDocument(document: T, action: SaveAction = SaveAction.AUTO): ApiDocumentOperationResult =
+        couchDb.saveDocument(databaseName, document, action)
 
     fun deleteDocument(document: T) =
         couchDb.deleteDocument(databaseName, document)

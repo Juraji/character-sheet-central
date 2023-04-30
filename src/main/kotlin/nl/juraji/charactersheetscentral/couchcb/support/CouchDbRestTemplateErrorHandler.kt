@@ -21,6 +21,7 @@ class CouchDbRestTemplateErrorHandler(
     override fun handleError(response: ClientHttpResponse) {
         val statusCode = response.statusCode
         val message = when (statusCode) {
+            HttpStatus.NOT_FOUND -> null // Ignore not founds, business logic should handle this
             HttpStatus.BAD_REQUEST -> objectMapper
                 .runCatching { readValue(response.body, ApiOperationError::class.java) }
                 .map { assertNotNull(it.reason) }
@@ -42,6 +43,6 @@ class CouchDbRestTemplateErrorHandler(
                 .run { throw CouchDbApiException(statusCode, this) }
         }
 
-        throw CouchDbApiException(statusCode, message)
+        if (message != null) throw CouchDbApiException(statusCode, message)
     }
 }

@@ -105,6 +105,6 @@ class CentralUserService(
     override fun userExists(username: String): Boolean =
         documentExistsBySelector(usernameSelector(username))
 
-    private fun usernameSelector(username: String): DocumentSelector =
+    private fun usernameSelector(username: String): DocumentSelector<CentralUser> =
         DocumentSelector.select("username" to username.lowercase())
 }

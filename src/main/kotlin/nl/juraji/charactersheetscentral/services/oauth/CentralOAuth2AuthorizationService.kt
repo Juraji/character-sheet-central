@@ -5,6 +5,7 @@ import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
+import nl.juraji.charactersheetscentral.couchcb.support.SaveAction
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.oauth2.core.OAuth2AccessToken
@@ -38,7 +39,7 @@ class CentralOAuth2AuthorizationService(
 
     override fun findByToken(token: String, tokenType: OAuth2TokenType?): OAuth2Authorization? {
         val tokenValueSelect = mapOf("tokenValue" to token)
-        val query = when (tokenType?.value) {
+        val query: DocumentSelector<CentralOAuthAuthorization> = when (tokenType?.value) {
             OAuth2ParameterNames.STATE -> DocumentSelector.select("state" to token)
 
             OAuth2ParameterNames.CODE -> DocumentSelector.select("authorizationCode" to tokenValueSelect)
@@ -68,16 +69,19 @@ class CentralOAuth2AuthorizationService(
         val oidcIdToken = authorization.getToken(OidcIdToken::class.java)?.token
         val refreshToken = authorization.getToken(OAuth2RefreshToken::class.java)?.token
 
-        val update = existing
-            ?.copy(
-                attributes = attributes,
-                state = state,
-                authorizationCode = authorizationCode,
-                accessToken = accessToken,
-                oidcIdToken = oidcIdToken,
-                refreshToken = refreshToken,
-            )
-            ?: CentralOAuthAuthorization(
+        if (existing != null) {
+            existing
+                .copy(
+                    attributes = attributes,
+                    state = state,
+                    authorizationCode = authorizationCode,
+                    accessToken = accessToken,
+                    oidcIdToken = oidcIdToken,
+                    refreshToken = refreshToken,
+                )
+                .let { saveDocument(it, SaveAction.UPDATE) }
+        } else {
+            CentralOAuthAuthorization(
                 id = authorization.id,
                 registeredClientId = authorization.registeredClientId,
                 principalName = authorization.principalName,
@@ -89,9 +93,8 @@ class CentralOAuth2AuthorizationService(
                 accessToken = accessToken,
                 oidcIdToken = oidcIdToken,
                 refreshToken = refreshToken,
-            )
-
-        saveDocument(update)
+            ).let { saveDocument(it, SaveAction.CREATE) }
+        }
     }
 
     override fun remove(authorization: OAuth2Authorization) {

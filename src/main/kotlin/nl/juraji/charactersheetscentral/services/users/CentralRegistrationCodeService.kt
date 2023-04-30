@@ -24,7 +24,7 @@ class CentralRegistrationCodeService(
 
     fun findRegistrationCode(code: String): CentralRegistrationCode? {
         val nowMillis = Instant.now().toEpochMilli()
-        val selector = DocumentSelector.select(
+        val selector = DocumentSelector.select<CentralRegistrationCode>(
             "code" to code,
             "expiresAt" to mapOf(DocumentSelector.OP_GT to nowMillis)
         )

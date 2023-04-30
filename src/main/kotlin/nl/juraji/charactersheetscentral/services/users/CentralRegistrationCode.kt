@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.services.users
 
-import nl.juraji.charactersheetscentral.couchcb.support.DocumentIdMeta
+import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
 import java.time.Instant
 
 data class CentralRegistrationCode(
@@ -9,4 +9,4 @@ data class CentralRegistrationCode(
     val name: String,
     val code: String,
     val expiresAt: Instant
-) : DocumentIdMeta
+) : CentralDocument

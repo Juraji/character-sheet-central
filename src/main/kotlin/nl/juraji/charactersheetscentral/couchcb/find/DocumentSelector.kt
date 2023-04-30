@@ -1,6 +1,8 @@
 package nl.juraji.charactersheetscentral.couchcb.find
 
-data class DocumentSelector(
+import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
+
+data class DocumentSelector<T : CentralDocument>(
     val selector: Map<String, Any>,
     val sort: List<Map<String, Any>> = emptyList(),
     val limit: Int = 25,
@@ -10,22 +12,22 @@ data class DocumentSelector(
     /**
      * Map selector to match only a single document
      */
-    fun singleResult(): DocumentSelector = this.copy(limit = 1, skip = 0)
+    fun singleResult(): DocumentSelector<T> = this.copy(limit = 1, skip = 0)
 
     /**
      * Include only specific fields in the result documents.
      * Note: If [includeSelected] is true (default), the root fields in the selector are also included in the fields
      * to make it so CouchDB can use the most appropriate index
      */
-    fun withFields(vararg fields: String, includeSelected: Boolean = true): DocumentSelector {
+    fun withFields(vararg fields: String, includeSelected: Boolean = true): DocumentSelector<T> {
         val selectFields = if (includeSelected) fields.toSet() + selector.keys else fields.toSet()
         return this.copy(fields = selectFields)
     }
 
     @Suppress("unused")
     companion object {
-        fun select(vararg selector: Pair<String, Any>): DocumentSelector =
-            DocumentSelector(mapOf(*selector))
+        inline fun <reified T : CentralDocument> select(vararg selector: Pair<String, Any>): DocumentSelector<T> =
+            DocumentSelector(mapOf("modelType" to T::class.simpleName!!, *selector))
 
         // Combination operators
         /** Matches if all the selectors in the array match. */

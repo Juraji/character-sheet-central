@@ -4,7 +4,6 @@ import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import nl.juraji.charactersheetscentral.couchcb.support.*
 import nl.juraji.charactersheetscentral.util.assertNotNull
-import nl.juraji.charactersheetscentral.util.assertNull
 import nl.juraji.charactersheetscentral.util.l
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.MessageSource
@@ -20,27 +19,32 @@ class CouchDbService(
     @Qualifier("couchDbRestTemplate") protected val restTemplate: RestTemplate,
     private val messageSource: MessageSource
 ) {
-    private val genericTypeRef: ParameterizedTypeReference<ApiFindResult<JustDocumentMeta>> by lazy {
-        object : ParameterizedTypeReference<ApiFindResult<JustDocumentMeta>>() {}
+    private val genericTypeRef: ParameterizedTypeReference<ApiFindResult<CentralDocumentMetaData>> by lazy {
+        object : ParameterizedTypeReference<ApiFindResult<CentralDocumentMetaData>>() {}
     }
 
     // Documents
-    fun <T : DocumentIdMeta> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
+    fun <T : CentralDocument> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
         restTemplate.getForObject("/$databaseName/$documentId", documentClass.java)
 
-    fun <T : DocumentIdMeta> findOneDocumentBySelector(
+    fun <T : CentralDocument> findOneDocumentBySelector(
         databaseName: String,
-        query: DocumentSelector,
+        query: DocumentSelector<T>,
         typeReference: ParameterizedTypeReference<ApiFindResult<T>>
     ): T? = findDocumentBySelector(databaseName, query.singleResult(), typeReference).firstOrNull()
 
-    fun documentExistsBySelector(databaseName: String, query: DocumentSelector): Boolean =
+    fun documentExistsBySelector(databaseName: String, query: DocumentSelector<*>): Boolean {
+        // This is a hack, as the input query type will never match the generic type reference used for deserialization.
+        // But this does not matter, as we never actually need the list contents, just whether it has content or not.
+        @Suppress("UNCHECKED_CAST")
+        query as DocumentSelector<CentralDocumentMetaData>
         // Selects the minimal fields required to optimize query
-        findDocumentBySelector(databaseName, query.withFields().singleResult(), genericTypeRef).isNotEmpty()
+        return findDocumentBySelector(databaseName, query.withFields().singleResult(), genericTypeRef).isNotEmpty()
+    }
 
-    fun <T : DocumentIdMeta> findDocumentBySelector(
+    fun <T : CentralDocument> findDocumentBySelector(
         databaseName: String,
-        query: DocumentSelector,
+        query: DocumentSelector<T>,
         typeReference: ParameterizedTypeReference<ApiFindResult<T>>
     ): List<T> {
         val uri = "/$databaseName/_find"
@@ -52,16 +56,25 @@ class CouchDbService(
             ?: emptyList()
     }
 
-    fun <T : DocumentIdMeta> saveDocument(databaseName: String, document: T): ApiDocumentOperationResult =
-        if (document.id == null) createDocument(databaseName, document)
-        else updateDocument(databaseName, document)
-
-    fun <T : DocumentIdMeta> createDocument(databaseName: String, document: T): ApiDocumentOperationResult {
+    fun <T : CentralDocument> saveDocument(
+        databaseName: String,
+        document: T,
+        action: SaveAction = SaveAction.AUTO
+    ): ApiDocumentOperationResult {
         val (id, rev) = document
 
-        assertNull(rev) { messageSource.l("couchDbService.assertions.newDocWithRev") }
+        return when (action) {
+            SaveAction.AUTO ->
+                if (id == null) createDocument(databaseName, document)
+                else updateDocument(databaseName, id, rev, document)
 
-        val newDocId = id ?: UUID.randomUUID().toString()
+            SaveAction.CREATE -> createDocument(databaseName, document)
+            SaveAction.UPDATE -> updateDocument(databaseName, id, rev, document)
+        }
+    }
+
+    private fun <T : CentralDocument> createDocument(databaseName: String, document: T): ApiDocumentOperationResult {
+        val newDocId = document.id ?: UUID.randomUUID().toString()
         val uri = "/$databaseName/$newDocId"
         val request = HttpEntity(document)
 
@@ -70,15 +83,18 @@ class CouchDbService(
             .orThrowNotFound(databaseName, null)
     }
 
-    fun <T : DocumentIdMeta> updateDocument(databaseName: String, document: T): ApiDocumentOperationResult {
-        val (id, rev) = document
+    private fun <T : CentralDocument> updateDocument(
+        databaseName: String,
+        documentId: String?,
+        documentRev: String?,
+        document: T
+    ): ApiDocumentOperationResult {
+        assertNotNull(documentId) { messageSource.l("couchDbService.assertions.existingDocIdMissing") }
+        assertNotNull(documentRev) { messageSource.l("couchDbService.assertions.existingDocRevMissing") }
 
-        assertNotNull(id) { messageSource.l("couchDbService.assertions.existingDocIdMissing") }
-        assertNotNull(rev) { messageSource.l("couchDbService.assertions.existingDocRevMissing") }
-
-        val uri = "/$databaseName/$id"
+        val uri = "/$databaseName/$documentId"
         val headers = HttpHeaders().apply {
-            set(HttpHeaders.IF_MATCH, rev)
+            set(HttpHeaders.IF_MATCH, documentRev)
         }
         val request = HttpEntity(document, headers)
 
@@ -153,7 +169,7 @@ class CouchDbService(
     ): ApiDocumentOperationResult = findUser(username)
         .orThrowNotFound("_users", username)
         .run { copy(password = password) }
-        .let { updateDocument("_users", it) }
+        .let { updateDocument("_users", it.id, it.rev, it) }
 
     fun removeMemberUser(username: String) =
         findUser(username)?.let { deleteDocument("_users", it) }
@@ -164,7 +180,7 @@ class CouchDbService(
         databaseName: String,
         indexName: String,
         fields: Set<String>,
-        partialFilterSelector: DocumentSelector? = null
+        partialFilterSelector: DocumentSelector<CentralDocumentMetaData>? = null
     ) {
         val uri = "/$databaseName/_index"
         val body = CreateIndexOperation(

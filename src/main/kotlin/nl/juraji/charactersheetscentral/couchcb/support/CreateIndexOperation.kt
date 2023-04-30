@@ -6,7 +6,7 @@ import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 data class Index(
     val fields: Set<String>,
     @JsonProperty("partial_filter_selector")
-    val partialFilterSelector: DocumentSelector?
+    val partialFilterSelector: DocumentSelector<CentralDocumentMetaData>?
 )
 
 data class CreateIndexOperation(

@@ -23,12 +23,11 @@ class CentralOAuth2AuthorizationConsentService(
     override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>>
         get() = object : ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>>() {}
 
-    fun findAllByPrincipal(principalName: String): List<CentralAuthorizationConsentWithClient> = DocumentSelector
-        .select("principalName" to principalName)
-        .let(::findDocumentsBySelector)
-        .associateWith { registeredClientRepository.findByClientId(it.registeredClientId) }
-        .filterValues { it != null }
-        .map { (consent, client) -> CentralAuthorizationConsentWithClient(client = client!!, consent = consent) }
+    fun findAllByPrincipal(principalName: String): List<CentralAuthorizationConsentWithClient> =
+        findDocumentsBySelector(DocumentSelector.select("principalName" to principalName))
+            .associateWith { registeredClientRepository.findByClientId(it.registeredClientId) }
+            .filterValues { it != null }
+            .map { (consent, client) -> CentralAuthorizationConsentWithClient(client = client!!, consent = consent) }
 
     override fun findById(registeredClientId: String, principalName: String): OAuth2AuthorizationConsent? =
         idQuery(registeredClientId, principalName)
@@ -62,7 +61,10 @@ class CentralOAuth2AuthorizationConsentService(
             ?.let(::deleteDocument)
     }
 
-    private fun idQuery(registeredClientId: String, principalName: String): DocumentSelector = DocumentSelector.select(
+    private fun idQuery(
+        registeredClientId: String,
+        principalName: String
+    ): DocumentSelector<CentralAuthorizationConsent> = DocumentSelector.select(
         "registeredClientId" to registeredClientId,
         "principalName" to principalName
     )

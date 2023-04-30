@@ -54,7 +54,7 @@ class AuthorizationServiceConfig {
             .withId("character-sheets-dev")
             .clientId("character-sheets-dev")
             .clientName("Character Sheets for Developers")
-            .clientSecret("{noop}secret")
+            .clientSecret("Q!3JgOU80wZ#")
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
