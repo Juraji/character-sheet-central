@@ -15,7 +15,6 @@ data class CouchCbConfiguration(
     val url: String,
     val username: String,
     val password: String,
-    val authorizationsDatabaseName: String,
 ) {
 
     @Bean

@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.couchcb.support
 
-data class UserDocument(
+data class CouchDbUserDocument(
     override val id: String? = null,
     override val rev: String? = null,
     val name: String,

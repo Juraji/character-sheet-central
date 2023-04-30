@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Character Sheets Central - My Apps</title>
+    <th:block th:insert="~{fragments/header.fragment :: headerFiles}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/user/home}">Character Sheets Central</a>
+        <div class="d-flex align-items-center">
+            <div class="username me-3">Logged in as <span th:text="${username}"></span></div>
+            <a class="btn btn-outline-danger btn-sm" th:href="@{/logout}">log out</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div th:if="${param.message}" class="alert alert-success" role="alert" th:text="${param.message}"></div>
+
+    <h1 class="mb-4">My Dashboard</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">My apps</h4>
+
+                    <div th:each="app : ${appsWithConsent}" th:text="${app.client.clientName}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

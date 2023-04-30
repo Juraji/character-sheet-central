@@ -5,7 +5,11 @@
     <th:block th:insert="~{fragments/header.fragment :: headerFiles}"></th:block>
 </head>
 <body>
-<th:block th:insert="~{fragments/header.fragment :: pageHeader}"></th:block>
+<nav class="navbar navbar-expand navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/login}">Character Sheets Central</a>
+    </div>
+</nav>
 
 <div class="container">
     <div class="row d-flex justify-content-center align-items-center">
@@ -33,7 +37,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="passwordInput" class="form-label">Password</label>
-                            <input class="form-control" id="passwordInput" name="password" required minlength="3"
+                            <input class="form-control" id="passwordInput" name="password" type="password" required minlength="3"
                                    th:classappend="${param.error != null ? 'is-invalid' : ''}"/>
                         </div>
 

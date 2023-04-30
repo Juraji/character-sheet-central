@@ -3,16 +3,19 @@ server:
   servlet:
     context-path: "/api/v1"
 
+cs-central:
+  root-db-name: "csc-root"
+  user-db-prefix: "csc-user-"
+
 couchdb:
-  url: http://localhost:5984/
-  username: admin
-  password: password
-  authorizationsDatabaseName: central-authorizations
+  url: "http://localhost:5984/"
+  username: "admin"
+  password: "password"
 
 
 logging:
   level:
-    root: INFO
-    org.springframework.web: INFO
-    org.springframework.security: INFO
-    org.springframework.security.oauth2: INFO
+    root: info
+    org.springframework.web: info
+    org.springframework.security: info
+    org.springframework.security.oauth2: info

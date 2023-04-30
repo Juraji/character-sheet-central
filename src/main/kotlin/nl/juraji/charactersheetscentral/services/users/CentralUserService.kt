@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.services.users
 
-import nl.juraji.charactersheetscentral.configuration.CouchCbConfiguration
+import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
@@ -21,10 +21,10 @@ import kotlin.reflect.KClass
 @Repository
 class CentralUserService(
     private val passwordEncoder: PasswordEncoder,
-    configuration: CouchCbConfiguration,
+    configuration: CentralConfiguration,
     couchDb: CouchDbService,
 ) : CouchDbDocumentRepository<CentralUser>(couchDb), UserDetailsManager, UserDetailsPasswordService {
-    override val databaseName: String = configuration.authorizationsDatabaseName
+    override val databaseName: String = configuration.rootDbName
 
     override val documentClass: KClass<CentralUser> = CentralUser::class
 

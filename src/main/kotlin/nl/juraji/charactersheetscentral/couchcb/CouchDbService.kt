@@ -36,7 +36,7 @@ class CouchDbService(
 
     fun documentExistsBySelector(databaseName: String, query: DocumentSelector): Boolean =
         // Selects the minimal fields required to optimize query
-        findDocumentBySelector(databaseName, query.withFields("_id", "_rev"), genericTypeRef).isNotEmpty()
+        findDocumentBySelector(databaseName, query.withFields().singleResult(), genericTypeRef).isNotEmpty()
 
     fun <T : DocumentIdMeta> findDocumentBySelector(
         databaseName: String,
@@ -131,14 +131,14 @@ class CouchDbService(
         restTemplate.put(uri, op)
     }
 
-    fun findUser(username: String): UserDocument? =
-        findDocumentById("_users", "org.couchdb.user:$username", UserDocument::class)
+    fun findUser(username: String): CouchDbUserDocument? =
+        findDocumentById("_users", "org.couchdb.user:$username", CouchDbUserDocument::class)
 
     fun addUser(
         username: String,
         password: String = "NOOP_PW-${UUID.randomUUID()}"
     ): ApiDocumentOperationResult {
-        val doc = UserDocument(
+        val doc = CouchDbUserDocument(
             id = "org.couchdb.user:$username",
             name = username,
             password = password

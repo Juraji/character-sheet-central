@@ -8,7 +8,7 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import java.security.Principal
 
@@ -19,7 +19,7 @@ class AuthorizationConsentController(
     private val authorizationConsentService: OAuth2AuthorizationConsentService,
     private val messageSource: MessageSource,
 ) {
-    @GetMapping(value = ["/oauth2/consent"])
+    @RequestMapping(value = ["/oauth2/consent"])
     fun consent(
         principal: Principal,
         model: Model,

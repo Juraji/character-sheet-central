@@ -37,9 +37,9 @@ class SignUpController(
         model["registrationCode"] = registrationCode
         model["username"] = username
 
-        val regCode = registrationCodeService.findRegistrationCode(registrationCode)
+        val registrationCodeDoc = registrationCodeService.findRegistrationCode(registrationCode)
 
-        if (regCode == null) {
+        if (registrationCodeDoc == null) {
             fieldErrors.add("registrationCode")
             return "signup"
         }
@@ -55,7 +55,9 @@ class SignUpController(
             return "signup"
         }
 
+        // Everything seems to be in order, create user and delete registration code
         userService.createUser(username, password, CentralUserRole.MEMBER)
+        registrationCodeService.deleteDocument(registrationCodeDoc)
 
         // Everything is ok!
         return "redirect:login?signUpComplete&username=$username"

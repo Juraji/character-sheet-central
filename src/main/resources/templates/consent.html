@@ -5,7 +5,11 @@
     <th:block th:insert="~{fragments/header.fragment :: headerFiles}"></th:block>
 </head>
 <body>
-<th:block th:insert="~{fragments/header.fragment :: pageHeader}"></th:block>
+<nav class="navbar navbar-expand navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/login}">Character Sheets Central</a>
+    </div>
+</nav>
 
 <div class="container">
     <div class="row d-flex justify-content-center align-items-center">

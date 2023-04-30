@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.services.users
 
-import nl.juraji.charactersheetscentral.configuration.CouchCbConfiguration
+import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
@@ -14,10 +14,10 @@ import kotlin.streams.asSequence
 
 @Repository
 class CentralRegistrationCodeService(
-    configuration: CouchCbConfiguration,
+    configuration: CentralConfiguration,
     couchDb: CouchDbService,
 ) : CouchDbDocumentRepository<CentralRegistrationCode>(couchDb) {
-    override val databaseName: String = configuration.authorizationsDatabaseName
+    override val databaseName: String = configuration.rootDbName
     override val documentClass: KClass<CentralRegistrationCode> = CentralRegistrationCode::class
     override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralRegistrationCode>>
         get() = object : ParameterizedTypeReference<ApiFindResult<CentralRegistrationCode>>() {}

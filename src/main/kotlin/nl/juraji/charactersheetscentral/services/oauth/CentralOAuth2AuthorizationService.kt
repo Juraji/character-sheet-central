@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.services.oauth
 
-import nl.juraji.charactersheetscentral.configuration.CouchCbConfiguration
+import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
@@ -22,11 +22,11 @@ import kotlin.reflect.KClass
 @Repository
 class CentralOAuth2AuthorizationService(
     private val registeredClientRepository: RegisteredClientRepository,
-    configuration: CouchCbConfiguration,
+    configuration: CentralConfiguration,
     couchDb: CouchDbService,
 ) : CouchDbDocumentRepository<CentralOAuthAuthorization>(couchDb), OAuth2AuthorizationService {
 
-    override val databaseName: String = configuration.authorizationsDatabaseName
+    override val databaseName: String = configuration.rootDbName
 
     override val documentClass: KClass<CentralOAuthAuthorization> = CentralOAuthAuthorization::class
 
