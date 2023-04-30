@@ -13,24 +13,26 @@ import kotlin.reflect.KClass
 
 @Repository
 class CentralOAuth2AuthorizationConsentService(
-    private val configuration: CouchCbConfiguration,
+    configuration: CouchCbConfiguration,
     couchDb: CouchDbService,
 ) : CouchDbDocumentRepository<CentralAuthorizationConsent>(couchDb), OAuth2AuthorizationConsentService {
 
-    override val databaseName: String
-        get() = configuration.authorizationsDatabaseName
+    override val databaseName: String = configuration.authorizationsDatabaseName
 
-    override val documentClass: KClass<CentralAuthorizationConsent>
-        get() = CentralAuthorizationConsent::class
+    override val documentClass: KClass<CentralAuthorizationConsent> = CentralAuthorizationConsent::class
 
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>> by lazy {
-        object : ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>>() {}
-    }
+    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>>
+        get() = object : ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>>() {}
 
     override fun findById(registeredClientId: String, principalName: String): OAuth2AuthorizationConsent? =
         idQuery(registeredClientId, principalName)
             .let(::findOneDocumentBySelector)
-            ?.toOAuth2AuthorizationConsent()
+            ?.run {
+                OAuth2AuthorizationConsent
+                    .withId(registeredClientId, principalName)
+                    .authorities { it.addAll(authorities) }
+                    .build()
+            }
 
     override fun save(authorizationConsent: OAuth2AuthorizationConsent) {
         authorizationConsent
@@ -54,13 +56,7 @@ class CentralOAuth2AuthorizationConsentService(
             ?.let(::deleteDocument)
     }
 
-    private fun CentralAuthorizationConsent.toOAuth2AuthorizationConsent(): OAuth2AuthorizationConsent =
-        OAuth2AuthorizationConsent
-            .withId(registeredClientId, principalName)
-            .authorities { it.addAll(authorities) }
-            .build()
-
-    private fun idQuery(registeredClientId: String, principalName: String): DocumentSelector = DocumentSelector(
+    private fun idQuery(registeredClientId: String, principalName: String): DocumentSelector = DocumentSelector.select(
         "registeredClientId" to registeredClientId,
         "principalName" to principalName
     )

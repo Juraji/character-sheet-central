@@ -8,11 +8,10 @@ import nl.juraji.charactersheetscentral.services.oauth.CentralScopes
 import nl.juraji.charactersheetscentral.util.jose.generateRsa
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.core.session.SessionRegistry
-import org.springframework.security.core.session.SessionRegistryImpl
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.security.oauth2.core.oidc.OidcScopes
@@ -26,7 +25,6 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint
-import org.springframework.security.web.session.HttpSessionEventPublisher
 import java.util.*
 
 
@@ -34,7 +32,7 @@ import java.util.*
 class AuthorizationServiceConfig {
 
     @Bean
-    @Order(1)
+    @Order(Ordered.HIGHEST_PRECEDENCE)
     fun authorizationServerSecurityFilterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(httpSecurity)
 
@@ -49,38 +47,6 @@ class AuthorizationServiceConfig {
 
         return httpSecurity.build()
     }
-
-    @Bean
-    @Throws(Exception::class)
-    fun defaultSecurityFilterChain(http: HttpSecurity): SecurityFilterChain? {
-        http
-            .authorizeHttpRequests { authorize ->
-                authorize
-                    .requestMatchers(
-                        "/assets/**",
-                        "/webjars/**",
-                        "/login",
-                        "/signup"
-                    ).permitAll()
-                    .anyRequest().authenticated()
-            }
-            // Form login handles the redirect to the login page from the
-            // authorization server filter chain
-            .formLogin { form ->
-                form
-                    .loginPage("/login")
-                    .loginProcessingUrl("/login")
-                    .successForwardUrl("/my-apps")
-            }
-            .logout { it.permitAll() }
-        return http.build()
-    }
-
-    @Bean
-    fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
-
-    @Bean
-    fun httpSessionEventPublisher(): HttpSessionEventPublisher = HttpSessionEventPublisher()
 
     @Bean
     fun registeredClientRepository(): RegisteredClientRepository {

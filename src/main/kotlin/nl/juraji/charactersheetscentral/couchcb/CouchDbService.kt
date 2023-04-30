@@ -20,6 +20,10 @@ class CouchDbService(
     @Qualifier("couchDbRestTemplate") protected val restTemplate: RestTemplate,
     private val messageSource: MessageSource
 ) {
+    private val genericTypeRef: ParameterizedTypeReference<ApiFindResult<JustDocumentMeta>> by lazy {
+        object : ParameterizedTypeReference<ApiFindResult<JustDocumentMeta>>() {}
+    }
+
     // Documents
     fun <T : DocumentIdMeta> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
         restTemplate.getForObject("/$databaseName/$documentId", documentClass.java)
@@ -29,6 +33,10 @@ class CouchDbService(
         query: DocumentSelector,
         typeReference: ParameterizedTypeReference<ApiFindResult<T>>
     ): T? = findDocumentBySelector(databaseName, query.singleResult(), typeReference).firstOrNull()
+
+    fun documentExistsBySelector(databaseName: String, query: DocumentSelector): Boolean =
+        // Selects the minimal fields required to optimize query
+        findDocumentBySelector(databaseName, query.withFields("_id", "_rev"), genericTypeRef).isNotEmpty()
 
     fun <T : DocumentIdMeta> findDocumentBySelector(
         databaseName: String,

@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.services.oauth
 
-import nl.juraji.charactersheetscentral.couchcb.support.DocumentIdMeta
+import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
 import org.springframework.security.core.GrantedAuthority
 
 data class CentralAuthorizationConsent(
@@ -9,4 +9,4 @@ data class CentralAuthorizationConsent(
     val registeredClientId: String,
     val principalName: String,
     val authorities: Set<GrantedAuthority>,
-) : DocumentIdMeta
+) : CentralDocument

@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.services.oauth
 
-import nl.juraji.charactersheetscentral.couchcb.support.DocumentIdMeta
+import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.OAuth2AccessToken
 import org.springframework.security.oauth2.core.OAuth2RefreshToken
@@ -20,4 +20,4 @@ data class CentralOAuthAuthorization(
     val accessToken: OAuth2AccessToken? = null,
     val oidcIdToken: OidcIdToken? = null,
     val refreshToken: OAuth2RefreshToken? = null,
-) : DocumentIdMeta
+) : CentralDocument

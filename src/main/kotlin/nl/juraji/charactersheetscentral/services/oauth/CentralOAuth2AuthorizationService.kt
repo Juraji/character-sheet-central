@@ -21,20 +21,17 @@ import kotlin.reflect.KClass
 
 @Repository
 class CentralOAuth2AuthorizationService(
-    private val configuration: CouchCbConfiguration,
     private val registeredClientRepository: RegisteredClientRepository,
+    configuration: CouchCbConfiguration,
     couchDb: CouchDbService,
 ) : CouchDbDocumentRepository<CentralOAuthAuthorization>(couchDb), OAuth2AuthorizationService {
 
-    override val databaseName: String
-        get() = configuration.authorizationsDatabaseName
+    override val databaseName: String = configuration.authorizationsDatabaseName
 
-    override val documentClass: KClass<CentralOAuthAuthorization>
-        get() = CentralOAuthAuthorization::class
+    override val documentClass: KClass<CentralOAuthAuthorization> = CentralOAuthAuthorization::class
 
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>> by lazy {
-        object : ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>>() {}
-    }
+    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>>
+        get() = object : ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>>() {}
 
     override fun findById(id: String): OAuth2Authorization? =
         findDocumentById(id)?.toOAuth2Authorization()
@@ -42,15 +39,15 @@ class CentralOAuth2AuthorizationService(
     override fun findByToken(token: String, tokenType: OAuth2TokenType?): OAuth2Authorization? {
         val tokenValueSelect = mapOf("tokenValue" to token)
         val query = when (tokenType?.value) {
-            OAuth2ParameterNames.STATE -> DocumentSelector("state" to token)
+            OAuth2ParameterNames.STATE -> DocumentSelector.select("state" to token)
 
-            OAuth2ParameterNames.CODE -> DocumentSelector("authorizationCode" to tokenValueSelect)
+            OAuth2ParameterNames.CODE -> DocumentSelector.select("authorizationCode" to tokenValueSelect)
 
-            OAuth2ParameterNames.ACCESS_TOKEN -> DocumentSelector("accessToken" to tokenValueSelect)
+            OAuth2ParameterNames.ACCESS_TOKEN -> DocumentSelector.select("accessToken" to tokenValueSelect)
 
-            OAuth2ParameterNames.REFRESH_TOKEN -> DocumentSelector("refreshToken" to tokenValueSelect)
+            OAuth2ParameterNames.REFRESH_TOKEN -> DocumentSelector.select("refreshToken" to tokenValueSelect)
 
-            else -> DocumentSelector(
+            else -> DocumentSelector.select(
                 "authorizationCode" to tokenValueSelect,
                 "accessToken" to tokenValueSelect,
                 "refreshToken" to tokenValueSelect,

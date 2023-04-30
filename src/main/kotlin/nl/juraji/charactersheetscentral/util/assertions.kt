@@ -7,7 +7,7 @@ fun assertNull(value: Any?, lazyMessage: () -> String = { "Null assertion error"
         returns() implies (value == null)
     }
 
-    if (value != null) throw IllegalArgumentException(lazyMessage())
+    if (value != null) throw AssertionException(lazyMessage)
 }
 
 fun <T : Any> assertNotNull(value: T?, lazyMessage: () -> String = { "Not null assertion error" }): T {
@@ -15,6 +15,17 @@ fun <T : Any> assertNotNull(value: T?, lazyMessage: () -> String = { "Not null a
         returns() implies (value != null)
     }
 
-    return value ?: throw IllegalArgumentException(lazyMessage())
+    return value ?: throw AssertionException(lazyMessage)
 }
 
+fun assertTrue(condition: Boolean, lazyMessage: () -> String = { "True assertion error" }) {
+    if (!condition) throw AssertionException(lazyMessage)
+}
+
+fun assertFalse(condition: Boolean, lazyMessage: () -> String = { "False assertion error" }) {
+    if (condition) throw AssertionException(lazyMessage)
+}
+
+class AssertionException(message: String) : Exception(message) {
+    constructor(lazyMessage: () -> String) : this(lazyMessage())
+}

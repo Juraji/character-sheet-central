@@ -5,43 +5,106 @@ import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
+import nl.juraji.charactersheetscentral.util.assertFalse
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.core.userdetails.UserDetailsPasswordService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.provisioning.UserDetailsManager
 import org.springframework.stereotype.Repository
 import kotlin.reflect.KClass
 
 @Repository
 class CentralUserService(
-    private val configuration: CouchCbConfiguration,
+    private val passwordEncoder: PasswordEncoder,
+    configuration: CouchCbConfiguration,
     couchDb: CouchDbService,
-) : CouchDbDocumentRepository<CentralUser>(couchDb), UserDetailsService {
-    override val databaseName: String
-        get() = configuration.authorizationsDatabaseName
+) : CouchDbDocumentRepository<CentralUser>(couchDb), UserDetailsManager, UserDetailsPasswordService {
+    override val databaseName: String = configuration.authorizationsDatabaseName
 
-    override val documentClass: KClass<CentralUser>
-        get() = CentralUser::class
+    override val documentClass: KClass<CentralUser> = CentralUser::class
 
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralUser>> by lazy {
-        object : ParameterizedTypeReference<ApiFindResult<CentralUser>>() {}
-    }
+    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralUser>>
+        get() = object : ParameterizedTypeReference<ApiFindResult<CentralUser>>() {}
+
+    fun findByUsername(username: String): CentralUser =
+        findOneDocumentBySelector(usernameSelector(username))
+            ?: throw UsernameNotFoundException("User with name $username does not exist!")
 
     override fun loadUserByUsername(username: String): UserDetails =
-        DocumentSelector("username" to username)
-            .let(::findOneDocumentBySelector)
-            ?.toUserDetails()
-            ?: throw UsernameNotFoundException("User \"$username\" not found!")
+        findByUsername(username).run {
+            User(
+                username, password, enabled,
+                accountNonExpired, credentialsNonExpired, accountNonLocked, authorities
+            )
+        }
 
-    private fun CentralUser.toUserDetails(): UserDetails = User
-        .withUsername(username)
-        .password(password)
-        .disabled(disabled)
-        .accountExpired(accountExpired)
-        .accountLocked(accountLocked)
-        .credentialsExpired(credentialsExpired)
-        .authorities(authorities)
-        .build()
+    fun createUser(username: String, password: String, vararg roles: String) {
+        User.builder()
+            .username(username)
+            .password(password)
+            .passwordEncoder(passwordEncoder::encode)
+            .roles(*roles)
+            .build()
+            .let(::createUser)
+    }
 
+    override fun createUser(user: UserDetails) {
+        assertFalse(userExists(user.username)) { "User with username ${user.username} already exists." }
+
+        user
+            .run {
+                CentralUser(
+                    username = username.lowercase(),
+                    password = password,
+                    enabled = isEnabled,
+                    accountNonExpired = isAccountNonExpired,
+                    accountNonLocked = isAccountNonLocked,
+                    credentialsNonExpired = isCredentialsNonExpired,
+                    authorities = authorities.toList(),
+                )
+            }
+            .let(::saveDocument)
+    }
+
+    override fun updateUser(user: UserDetails) {
+        findByUsername(username = user.username)
+            .copy(
+                enabled = user.isEnabled,
+                accountNonExpired = user.isAccountNonExpired,
+                accountNonLocked = user.isAccountNonLocked,
+                credentialsNonExpired = user.isCredentialsNonExpired,
+                authorities = user.authorities.toList(),
+            )
+            .let(::saveDocument)
+    }
+
+    override fun deleteUser(username: String) {
+        findByUsername(username).let(::deleteDocument)
+    }
+
+    /**
+     * Current context user only!
+     */
+    override fun changePassword(oldPassword: String, newPassword: String) {
+        val currentUsername: String =
+            SecurityContextHolder.getContext()?.authentication?.name
+                ?: throw AccessDeniedException("No authenticated user")
+
+        TODO("Not yet implemented")
+    }
+
+    override fun updatePassword(user: UserDetails, newPassword: String): UserDetails {
+        TODO("Not yet implemented")
+    }
+
+    override fun userExists(username: String): Boolean =
+        documentExistsBySelector(usernameSelector(username))
+
+    private fun usernameSelector(username: String): DocumentSelector =
+        DocumentSelector.select("username" to username.lowercase())
 }

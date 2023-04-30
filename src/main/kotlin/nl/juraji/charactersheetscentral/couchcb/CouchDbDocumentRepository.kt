@@ -20,6 +20,9 @@ abstract class CouchDbDocumentRepository<T : DocumentIdMeta>(
     fun findOneDocumentBySelector(query: DocumentSelector): T? =
         couchDb.findOneDocumentBySelector(databaseName, query.singleResult(), documentFindTypeRef)
 
+    fun documentExistsBySelector(query: DocumentSelector): Boolean =
+        couchDb.documentExistsBySelector(databaseName, query)
+
     fun findDocumentsBySelector(query: DocumentSelector): List<T> =
         couchDb.findDocumentBySelector(databaseName, query, documentFindTypeRef)
 

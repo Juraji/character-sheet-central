@@ -7,4 +7,4 @@ data class UserDocument(
     val password: String? = null,
     val roles: Set<String> = emptySet(),
     val type: String = "user"
-) : DocumentIdMeta
+) : CentralDocument

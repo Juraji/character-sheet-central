@@ -1,0 +1,15 @@
+spring:
+  mvc:
+    log-request-details: true
+
+couchdb:
+  url: http://localhost:5984/
+  username: admin
+  password: password
+
+
+logging:
+  level:
+    nl.juraji: debug
+    org.springframework.web: debug
+    org.springframework.context.support: warn
