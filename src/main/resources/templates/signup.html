@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Character Sheets Central - Create Account</title>
+    <th:block th:insert="~{fragments/header.fragment :: headerFiles}"></th:block>
+</head>
+<body>
+<th:block th:insert="~{fragments/header.fragment :: pageHeader}"></th:block>
+
+<div class="container">
+    <div class="row d-flex justify-content-center align-items-center">
+        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+            <h1 class="mb-4">Create Account</h1>
+
+            <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+
+            <form class="form-sign-in" method="post" th:action="@{/signup}">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="registrationCodeInput" class="form-label">Enter your registration code</label>
+                            <input class="form-control" id="registrationCodeInput" name="registrationCode" required
+                                   th:value="${param.registrationCode}"
+                                   th:classappend="${fieldError?.contains('registrationCode')}? 'is-invalid'"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="usernameInput" class="form-label">Choose a username</label>
+                            <input class="form-control" id="usernameInput" name="username" required minlength="3"
+                                   th:value="${param.username}"
+                                   th:classappend="${fieldError?.contains('username')}? 'is-invalid'"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="passwordInput" class="form-label">Enter a password</label>
+                            <input class="form-control" id="passwordInput" name="password" required minlength="3"
+                                   th:classappend="${fieldError?.contains('password')}? 'is-invalid'"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="passwordRepeatInput" class="form-label">Enter your password again</label>
+                            <input class="form-control" id="passwordRepeatInput" name="passwordRepeat" required
+                                   minlength="3"
+                                   th:classappend="${fieldError?.contains('passwordRepeat')}? 'is-invalid'"/>
+                        </div>
+
+                        <button class="btn btn-block btn-primary" type="submit">Create account</button>
+                    </div>
+                    <div class="card-footer">
+                        Already have an account? <a th:href="@{/login}">Log in</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

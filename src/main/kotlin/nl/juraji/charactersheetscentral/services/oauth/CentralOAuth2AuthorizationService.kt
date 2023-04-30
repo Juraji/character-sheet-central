@@ -3,8 +3,8 @@ package nl.juraji.charactersheetscentral.services.oauth
 import nl.juraji.charactersheetscentral.configuration.CouchCbConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
-import nl.juraji.charactersheetscentral.couchcb.find.ApiFindOperationResult
-import nl.juraji.charactersheetscentral.couchcb.find.FindQuery
+import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
+import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.oauth2.core.OAuth2AccessToken
@@ -32,8 +32,8 @@ class CentralOAuth2AuthorizationService(
     override val documentClass: KClass<CentralOAuthAuthorization>
         get() = CentralOAuthAuthorization::class
 
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindOperationResult<CentralOAuthAuthorization>> by lazy {
-        object : ParameterizedTypeReference<ApiFindOperationResult<CentralOAuthAuthorization>>() {}
+    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>> by lazy {
+        object : ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>>() {}
     }
 
     override fun findById(id: String): OAuth2Authorization? =
@@ -42,15 +42,15 @@ class CentralOAuth2AuthorizationService(
     override fun findByToken(token: String, tokenType: OAuth2TokenType?): OAuth2Authorization? {
         val tokenValueSelect = mapOf("tokenValue" to token)
         val query = when (tokenType?.value) {
-            OAuth2ParameterNames.STATE -> FindQuery("state" to token)
+            OAuth2ParameterNames.STATE -> DocumentSelector("state" to token)
 
-            OAuth2ParameterNames.CODE -> FindQuery("authorizationCode" to tokenValueSelect)
+            OAuth2ParameterNames.CODE -> DocumentSelector("authorizationCode" to tokenValueSelect)
 
-            OAuth2ParameterNames.ACCESS_TOKEN -> FindQuery("accessToken" to tokenValueSelect)
+            OAuth2ParameterNames.ACCESS_TOKEN -> DocumentSelector("accessToken" to tokenValueSelect)
 
-            OAuth2ParameterNames.REFRESH_TOKEN -> FindQuery("refreshToken" to tokenValueSelect)
+            OAuth2ParameterNames.REFRESH_TOKEN -> DocumentSelector("refreshToken" to tokenValueSelect)
 
-            else -> FindQuery(
+            else -> DocumentSelector(
                 "authorizationCode" to tokenValueSelect,
                 "accessToken" to tokenValueSelect,
                 "refreshToken" to tokenValueSelect,

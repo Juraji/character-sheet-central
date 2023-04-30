@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Character Sheets Central - Login</title>
+    <th:block th:insert="~{fragments/header.fragment :: headerFiles}"></th:block>
+</head>
+<body>
+<th:block th:insert="~{fragments/header.fragment :: pageHeader}"></th:block>
+
+<div class="container">
+    <div class="row d-flex justify-content-center align-items-center">
+        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+            <h1 class="mb-4">Login</h1>
+
+            <form class="form-sign-in" method="post" th:action="@{/login}">
+                <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                    Invalid username or password.
+                </div>
+                <div th:if="${param.signUpComplete}" class="alert alert-success" role="alert">
+                    Your account has been created, you can now log in!
+                </div>
+                <div th:if="${param.logout}" class="alert alert-success" role="alert">
+                    You have been logged out.
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="usernameInput" class="form-label">Username</label>
+                            <input class="form-control" id="usernameInput" name="username" required minlength="3"
+                                   th:value="${param.username}"
+                                   th:classappend="${param.error != null ? 'is-invalid' : ''}"/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="passwordInput" class="form-label">Password</label>
+                            <input class="form-control" id="passwordInput" name="password" required minlength="3"
+                                   th:classappend="${param.error != null ? 'is-invalid' : ''}"/>
+                        </div>
+
+                        <button class="btn btn-block btn-primary" type="submit">Sign in</button>
+                    </div>
+                    <div class="card-footer">
+                        No account yet? <a th:href="@{/signup}">Create an account</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

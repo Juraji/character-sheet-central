@@ -1,11 +1,11 @@
 package nl.juraji.charactersheetscentral.couchcb
 
-import nl.juraji.charactersheetscentral.couchcb.find.ApiFindOperationResult
-import nl.juraji.charactersheetscentral.couchcb.find.FindQuery
+import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
+import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import nl.juraji.charactersheetscentral.couchcb.support.*
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import nl.juraji.charactersheetscentral.util.assertNull
-import nl.juraji.charactersheetscentral.util.localizedMessage
+import nl.juraji.charactersheetscentral.util.l
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.MessageSource
 import org.springframework.core.ParameterizedTypeReference
@@ -26,17 +26,17 @@ class CouchDbService(
 
     fun <T : DocumentIdMeta> findOneDocumentBySelector(
         databaseName: String,
-        findQuery: FindQuery,
-        typeReference: ParameterizedTypeReference<ApiFindOperationResult<T>>
-    ): T? = findDocumentBySelector(databaseName, findQuery.singleResult(), typeReference).firstOrNull()
+        query: DocumentSelector,
+        typeReference: ParameterizedTypeReference<ApiFindResult<T>>
+    ): T? = findDocumentBySelector(databaseName, query.singleResult(), typeReference).firstOrNull()
 
     fun <T : DocumentIdMeta> findDocumentBySelector(
         databaseName: String,
-        findQuery: FindQuery,
-        typeReference: ParameterizedTypeReference<ApiFindOperationResult<T>>
+        query: DocumentSelector,
+        typeReference: ParameterizedTypeReference<ApiFindResult<T>>
     ): List<T> {
         val uri = "/$databaseName/_find"
-        val request = HttpEntity(findQuery)
+        val request = HttpEntity(query)
 
         return restTemplate
             .exchange(uri, HttpMethod.POST, request, typeReference)
@@ -49,9 +49,11 @@ class CouchDbService(
         else updateDocument(databaseName, document)
 
     fun <T : DocumentIdMeta> createDocument(databaseName: String, document: T): ApiDocumentOperationResult {
-        assertNull(document.rev) { messageSource.localizedMessage("nl.juraji.CouchDbService.assertions.newDocWithRev") }
+        val (id, rev) = document
 
-        val newDocId = document.id ?: UUID.randomUUID().toString()
+        assertNull(rev) { messageSource.l("couchDbService.assertions.newDocWithRev") }
+
+        val newDocId = id ?: UUID.randomUUID().toString()
         val uri = "/$databaseName/$newDocId"
         val request = HttpEntity(document)
 
@@ -61,12 +63,14 @@ class CouchDbService(
     }
 
     fun <T : DocumentIdMeta> updateDocument(databaseName: String, document: T): ApiDocumentOperationResult {
-        assertNotNull(document.id) { messageSource.localizedMessage("nl.juraji.CouchDbService.assertions.existingDocIdMissing") }
-        assertNotNull(document.rev) { messageSource.localizedMessage("nl.juraji.CouchDbService.assertions.existingDocRevMissing") }
+        val (id, rev) = document
 
-        val uri = "/$databaseName/${document.id}"
+        assertNotNull(id) { messageSource.l("couchDbService.assertions.existingDocIdMissing") }
+        assertNotNull(rev) { messageSource.l("couchDbService.assertions.existingDocRevMissing") }
+
+        val uri = "/$databaseName/$id"
         val headers = HttpHeaders().apply {
-            set(HttpHeaders.IF_MATCH, document.rev)
+            set(HttpHeaders.IF_MATCH, rev)
         }
         val request = HttpEntity(document, headers)
 
@@ -78,8 +82,8 @@ class CouchDbService(
     fun deleteDocument(databaseName: String, document: DocumentIdMeta) {
         val (id, rev) = document
 
-        assertNotNull(id) { messageSource.localizedMessage("nl.juraji.CouchDbService.assertions.deleteMissingId") }
-        assertNotNull(rev) { messageSource.localizedMessage("nl.juraji.CouchDbService.assertions.deleteMissingRev") }
+        assertNotNull(id) { messageSource.l("couchDbService.assertions.deleteMissingId") }
+        assertNotNull(rev) { messageSource.l("couchDbService.assertions.deleteMissingRev") }
 
         deleteDocument(databaseName, id, rev)
     }
@@ -88,7 +92,6 @@ class CouchDbService(
         val uri = "/$databaseName/$documentId"
         val headers = HttpHeaders().apply {
             set(HttpHeaders.IF_MATCH, documentRev)
-            accept = listOf(MediaType.APPLICATION_JSON)
         }
         val request = HttpEntity(null, headers)
 
@@ -117,11 +120,7 @@ class CouchDbService(
             members = DatabaseUsers(members)
         )
 
-        val request = HttpEntity(op)
-
-        restTemplate
-            .exchange(uri, HttpMethod.PUT, request, ApiOperationError::class.java)
-            .orThrowNotFound(databaseName, "_security")
+        restTemplate.put(uri, op)
     }
 
     fun findUser(username: String): UserDocument? =
@@ -157,7 +156,7 @@ class CouchDbService(
         databaseName: String,
         indexName: String,
         fields: Set<String>,
-        partialFilterSelector: FindQuery? = null
+        partialFilterSelector: DocumentSelector? = null
     ) {
         val uri = "/$databaseName/_index"
         val body = CreateIndexOperation(
@@ -176,7 +175,7 @@ class CouchDbService(
 
     protected fun <R : Any> R?.orThrowNotFound(databaseName: String, forDocumentId: String?): R = this ?: messageSource
         // @formatter:off
-        .localizedMessage("nl.juraji.CouchDbService.couchApiResponse.notFound", databaseName, forDocumentId ?: "[UNKNOWN ID]")
+        .l("couchDbApi.responses.notFound", databaseName, forDocumentId ?: "[UNKNOWN ID]")
         .run { throw CouchDbApiException(HttpStatus.NOT_FOUND, this) }
         // @formatter:on
 

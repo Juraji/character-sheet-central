@@ -4,13 +4,15 @@ import com.nimbusds.jose.jwk.JWKSet
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext
+import nl.juraji.charactersheetscentral.services.oauth.CentralScopes
 import nl.juraji.charactersheetscentral.util.jose.generateRsa
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.core.session.SessionRegistry
+import org.springframework.security.core.session.SessionRegistryImpl
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.security.oauth2.core.oidc.OidcScopes
@@ -24,6 +26,7 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint
+import org.springframework.security.web.session.HttpSessionEventPublisher
 import java.util.*
 
 
@@ -31,7 +34,7 @@ import java.util.*
 class AuthorizationServiceConfig {
 
     @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @Order(1)
     fun authorizationServerSecurityFilterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(httpSecurity)
 
@@ -49,6 +52,38 @@ class AuthorizationServiceConfig {
     }
 
     @Bean
+    @Throws(Exception::class)
+    fun defaultSecurityFilterChain(http: HttpSecurity): SecurityFilterChain? {
+        http
+            .authorizeHttpRequests { authorize ->
+                authorize
+                    .requestMatchers(
+                        "/assets/**",
+                        "/webjars/**",
+                        "/login",
+                        "/signup"
+                    ).permitAll()
+                    .anyRequest().authenticated()
+            }
+            // Form login handles the redirect to the login page from the
+            // authorization server filter chain
+            .formLogin { form ->
+                form
+                    .loginPage("/login")
+                    .loginProcessingUrl("/login")
+                    .successForwardUrl("/my-apps")
+            }
+            .logout { it.permitAll() }
+        return http.build()
+    }
+
+    @Bean
+    fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
+
+    @Bean
+    fun httpSessionEventPublisher(): HttpSessionEventPublisher = HttpSessionEventPublisher()
+
+    @Bean
     fun registeredClientRepository(): RegisteredClientRepository {
         val registeredClient: RegisteredClient = RegisteredClient
             .withId("character-sheets-dev")
@@ -61,7 +96,7 @@ class AuthorizationServiceConfig {
             .redirectUri("http://127.0.0.1:4200/settings/central/oauth/callback")
             .scope(OidcScopes.OPENID)
             .scope(OidcScopes.PROFILE)
-            .scope("couchdb.access")
+            .scope(CentralScopes.COUCHDB_ACCESS)
             .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
             .build()
 

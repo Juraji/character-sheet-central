@@ -3,8 +3,8 @@ package nl.juraji.charactersheetscentral.services.oauth
 import nl.juraji.charactersheetscentral.configuration.CouchCbConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
-import nl.juraji.charactersheetscentral.couchcb.find.ApiFindOperationResult
-import nl.juraji.charactersheetscentral.couchcb.find.FindQuery
+import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
+import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
@@ -24,12 +24,12 @@ class CentralUserService(
     override val documentClass: KClass<CentralUser>
         get() = CentralUser::class
 
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindOperationResult<CentralUser>> by lazy {
-        object : ParameterizedTypeReference<ApiFindOperationResult<CentralUser>>() {}
+    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralUser>> by lazy {
+        object : ParameterizedTypeReference<ApiFindResult<CentralUser>>() {}
     }
 
     override fun loadUserByUsername(username: String): UserDetails =
-        FindQuery("username" to username)
+        DocumentSelector("username" to username)
             .let(::findOneDocumentBySelector)
             ?.toUserDetails()
             ?: throw UsernameNotFoundException("User \"$username\" not found!")

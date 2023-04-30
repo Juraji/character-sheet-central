@@ -3,8 +3,8 @@ package nl.juraji.charactersheetscentral.services.oauth
 import nl.juraji.charactersheetscentral.configuration.CouchCbConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
-import nl.juraji.charactersheetscentral.couchcb.find.ApiFindOperationResult
-import nl.juraji.charactersheetscentral.couchcb.find.FindQuery
+import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
+import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService
@@ -23,8 +23,8 @@ class CentralOAuth2AuthorizationConsentService(
     override val documentClass: KClass<CentralAuthorizationConsent>
         get() = CentralAuthorizationConsent::class
 
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindOperationResult<CentralAuthorizationConsent>> by lazy {
-        object : ParameterizedTypeReference<ApiFindOperationResult<CentralAuthorizationConsent>>() {}
+    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>> by lazy {
+        object : ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>>() {}
     }
 
     override fun findById(registeredClientId: String, principalName: String): OAuth2AuthorizationConsent? =
@@ -60,7 +60,7 @@ class CentralOAuth2AuthorizationConsentService(
             .authorities { it.addAll(authorities) }
             .build()
 
-    private fun idQuery(registeredClientId: String, principalName: String): FindQuery = FindQuery(
+    private fun idQuery(registeredClientId: String, principalName: String): DocumentSelector = DocumentSelector(
         "registeredClientId" to registeredClientId,
         "principalName" to principalName
     )

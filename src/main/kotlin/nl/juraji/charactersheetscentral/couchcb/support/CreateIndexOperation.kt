@@ -1,12 +1,12 @@
 package nl.juraji.charactersheetscentral.couchcb.support
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import nl.juraji.charactersheetscentral.couchcb.find.FindQuery
+import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 
 data class Index(
     val fields: Set<String>,
     @JsonProperty("partial_filter_selector")
-    val partialFilterSelector: FindQuery?
+    val partialFilterSelector: DocumentSelector?
 )
 
 data class CreateIndexOperation(
