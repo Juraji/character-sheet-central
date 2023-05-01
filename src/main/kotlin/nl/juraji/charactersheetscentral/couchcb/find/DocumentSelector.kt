@@ -39,11 +39,20 @@ data class DocumentSelector<T : CentralDocument>(
         return this.copy(useIndex = index.toSet())
     }
 
+    /**
+     * Append/merge field selectors to this instance
+     */
+    fun appendSelectors(vararg selector: Pair<String, Any>): DocumentSelector<T> =
+        this.copy(selector = this.selector + selector.toMap())
+
     companion object {
         inline fun <reified T : CentralDocument> select(vararg selector: Pair<String, Any>): DocumentSelector<T> =
             DocumentSelector(mapOf("modelType" to T::class.simpleName!!, *selector))
 
-        fun <T : CentralDocument> partialFilterSelector(modelType: KClass<T>, vararg selector: Pair<String, Any>): DocumentSelector<T> =
+        fun <T : CentralDocument> partialFilterSelector(
+            modelType: KClass<T>,
+            vararg selector: Pair<String, Any>
+        ): DocumentSelector<T> =
             DocumentSelector(mapOf("modelType" to modelType.simpleName!!, *selector))
     }
 

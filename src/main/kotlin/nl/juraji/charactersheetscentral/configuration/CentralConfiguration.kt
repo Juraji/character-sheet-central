@@ -6,4 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class CentralConfiguration(
     val rootDbName: String,
     val userDbPrefix: String,
+    val adminUsername: String,
+    val adminPassword: String,
 )

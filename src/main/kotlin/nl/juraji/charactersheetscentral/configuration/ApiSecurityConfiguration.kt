@@ -2,22 +2,20 @@ package nl.juraji.charactersheetscentral.configuration
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.Ordered
-import org.springframework.core.annotation.Order
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.core.session.SessionRegistryImpl
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.factory.PasswordEncoderFactories
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.session.HttpSessionEventPublisher
-import java.security.SecureRandom
 
 @Configuration
 class ApiSecurityConfiguration {
 
     @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE + 1)
+//    @Order(Ordered.HIGHEST_PRECEDENCE + 1)
     fun defaultSecurityFilterChain(http: HttpSecurity): SecurityFilterChain? {
         http
             .authorizeHttpRequests { authorize ->
@@ -26,7 +24,7 @@ class ApiSecurityConfiguration {
                         "/assets/**",
                         "/webjars/**",
                         "/login",
-                        "/signup"
+                        "/signup",
                     ).permitAll()
                     .anyRequest().authenticated()
             }
@@ -36,7 +34,7 @@ class ApiSecurityConfiguration {
                 form
                     .loginPage("/login")
                     .loginProcessingUrl("/login")
-//                    .successForwardUrl("/user/home")
+                    .defaultSuccessUrl("/user/home")
             }
             .logout { it.permitAll() }
         return http.build()
@@ -49,5 +47,18 @@ class ApiSecurityConfiguration {
     fun httpSessionEventPublisher(): HttpSessionEventPublisher = HttpSessionEventPublisher()
 
     @Bean
-    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder(-1, SecureRandom())
+    fun passwordEncoder(): PasswordEncoder =
+        (PasswordEncoderFactories.createDelegatingPasswordEncoder() as DelegatingPasswordEncoder).apply {
+            // Override the default encoder (which throws an error on use) with a simple input equals implementation.
+            // This is needed because Spring OAuth Server picks up on this bean while it should not.
+            setDefaultPasswordEncoderForMatches(NoopPasswordEncoder())
+        }
+
+    class NoopPasswordEncoder : PasswordEncoder {
+        override fun encode(rawPassword: CharSequence): String =
+            throw IllegalStateException("This encoder should not be used for password encoding!")
+
+        override fun matches(rawPassword: CharSequence, encodedPassword: String): Boolean =
+            rawPassword == encodedPassword
+    }
 }

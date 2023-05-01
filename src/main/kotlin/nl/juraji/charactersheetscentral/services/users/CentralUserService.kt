@@ -43,6 +43,7 @@ class CentralUserService(
             User.builder()
                 .username(username)
                 .password(password)
+                .passwordEncoder(passwordEncoder::encode)
                 .disabled(!enabled)
                 .accountExpired(!accountNonExpired)
                 .credentialsExpired(!credentialsNonExpired)

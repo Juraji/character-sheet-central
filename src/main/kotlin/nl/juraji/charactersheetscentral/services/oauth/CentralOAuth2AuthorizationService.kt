@@ -78,6 +78,8 @@ class CentralOAuth2AuthorizationService(
     override fun save(authorization: OAuth2Authorization) {
         assertNotNull(authorization.id)
 
+        val ser = oauth2ObjectMapper::writeValueAsString
+
         val existing = findDocumentById(authorization.id)
         val attributes = authorization.attributes
         val state = authorization.getAttribute<String>(OAuth2ParameterNames.STATE)?.takeIf(String::isNotBlank)
@@ -91,10 +93,14 @@ class CentralOAuth2AuthorizationService(
                 .copy(
                     state = state,
                     serializedAttributes = oauth2ObjectMapper.writeValueAsString(attributes),
-                    serializedAuthorizationCode = oauth2ObjectMapper.writeValueAsString(authorizationCode),
-                    serializedAccessToken = oauth2ObjectMapper.writeValueAsString(accessToken),
-                    serializedOidcIdToken = oauth2ObjectMapper.writeValueAsString(oidcIdToken),
-                    serializedRefreshToken = oauth2ObjectMapper.writeValueAsString(refreshToken),
+                    authorizationCode = authorizationCode?.tokenValue,
+                    serializedAuthorizationCode = ser(authorizationCode),
+                    accessToken = accessToken?.tokenValue,
+                    serializedAccessToken = ser(accessToken),
+                    oidcIdToken = oidcIdToken?.tokenValue,
+                    serializedOidcIdToken = ser(oidcIdToken),
+                    refreshToken = refreshToken?.tokenValue,
+                    serializedRefreshToken = ser(refreshToken),
                 )
                 .let { saveDocument(it, SaveAction.UPDATE) }
         } else {
@@ -106,10 +112,14 @@ class CentralOAuth2AuthorizationService(
                 authorizedScopes = authorization.authorizedScopes,
                 state = state,
                 serializedAttributes = oauth2ObjectMapper.writeValueAsString(attributes),
-                serializedAuthorizationCode = oauth2ObjectMapper.writeValueAsString(authorizationCode),
-                serializedAccessToken = oauth2ObjectMapper.writeValueAsString(accessToken),
-                serializedOidcIdToken = oauth2ObjectMapper.writeValueAsString(oidcIdToken),
-                serializedRefreshToken = oauth2ObjectMapper.writeValueAsString(refreshToken),
+                authorizationCode = authorizationCode?.tokenValue,
+                serializedAuthorizationCode = ser(authorizationCode),
+                accessToken = accessToken?.tokenValue,
+                serializedAccessToken = ser(accessToken),
+                oidcIdToken = oidcIdToken?.tokenValue,
+                serializedOidcIdToken = ser(oidcIdToken),
+                refreshToken = refreshToken?.tokenValue,
+                serializedRefreshToken = ser(refreshToken),
             ).let { saveDocument(it, SaveAction.CREATE) }
         }
     }
@@ -119,47 +129,47 @@ class CentralOAuth2AuthorizationService(
     }
 
     override fun defineIndexes(): List<CreateIndexOperation> {
-        DocumentSelector.partialFilterSelector(CentralOAuthAuthorization::class)
+        val selector = DocumentSelector.partialFilterSelector(CentralOAuthAuthorization::class)
+        fun selectNonNull(field:String): Pair<String, Any> = field to mapOf(DocumentSelector.Match.TYPE to "string")
 
         return listOf(
             CreateIndexOperation(
                 name = IDX_STATE,
                 index = Index(
                     fields = setOf("state"),
-                    partialFilterSelector = DocumentSelector
-                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                    partialFilterSelector = selector
+                        .appendSelectors(selectNonNull("state"))
                 )
             ),
             CreateIndexOperation(
                 name = IDX_AUTHORIZATION_CODE,
                 index = Index(
                     fields = setOf("authorizationCode"),
-                    partialFilterSelector = DocumentSelector
-                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                    partialFilterSelector = selector
+                        .appendSelectors(selectNonNull("authorizationCode"))
                 )
             ),
             CreateIndexOperation(
                 name = IDX_ACCESS_TOKEN,
                 index = Index(
                     fields = setOf("accessToken"),
-                    partialFilterSelector = DocumentSelector
-                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                    partialFilterSelector = selector
+                        .appendSelectors(selectNonNull("accessToken"))
                 )
             ),
             CreateIndexOperation(
                 name = IDX_REFRESH_TOKEN,
                 index = Index(
                     fields = setOf("refreshToken"),
-                    partialFilterSelector = DocumentSelector
-                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                    partialFilterSelector = selector
+                        .appendSelectors(selectNonNull("refreshToken"))
                 )
             ),
             CreateIndexOperation(
                 name = IDX_ALL_TOKENS,
                 index = Index(
                     fields = setOf("state", "authorizationCode", "accessToken", "refreshToken"),
-                    partialFilterSelector = DocumentSelector
-                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                    partialFilterSelector = selector
                 )
             ),
         )

@@ -2,11 +2,16 @@ spring:
   mvc:
     log-request-details: true
 
-couchdb:
-  url: http://localhost:5984/
-  username: admin
-  password: password
+cs-central:
+  root-db-name: "csc-root"
+  user-db-prefix: "csc-user-"
+  admin-username: "admin"
+  admin-password: "password"
 
+couchdb:
+  url: "http://localhost:5984/"
+  username: ${cs-central.admin-username}
+  password: ${cs-central.admin-password}
 
 logging:
   level:

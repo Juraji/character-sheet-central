@@ -8,6 +8,7 @@ import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
 import nl.juraji.charactersheetscentral.couchcb.support.Index
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
@@ -37,22 +38,26 @@ class CentralOAuth2AuthorizationConsentService(
         idQuery(registeredClientId, principalName)
             .let(::findOneDocumentBySelector)
             ?.run {
+                val grantedAuthorities = authorities.map(::SimpleGrantedAuthority)
+
                 OAuth2AuthorizationConsent
                     .withId(registeredClientId, principalName)
-                    .authorities { it.addAll(authorities) }
+                    .authorities { it.addAll(grantedAuthorities) }
                     .build()
             }
 
     override fun save(authorizationConsent: OAuth2AuthorizationConsent) {
         authorizationConsent
             .run {
+                val authoritiesSet = authorities.map { it.authority }.toSet()
+
                 idQuery(registeredClientId, principalName)
                     .let(::findOneDocumentBySelector)
-                    ?.copy(authorities = authorities)
+                    ?.copy(authorities = authoritiesSet)
                     ?: CentralAuthorizationConsent(
                         registeredClientId = registeredClientId,
                         principalName = principalName,
-                        authorities = authorities
+                        authorities = authoritiesSet
                     )
             }
             .let(::saveDocument)

@@ -6,11 +6,13 @@ server:
 cs-central:
   root-db-name: "csc-root"
   user-db-prefix: "csc-user-"
+  admin-username: ${CENTRAL_ADMIN_USERNAME}
+  admin-password: ${CENTRAL_ADMIN_PASSWORD}
 
 couchdb:
-  url: "http://localhost:5984/"
-  username: "admin"
-  password: "password"
+  url: ${COUCH_DB_URI}
+  username: ${COUCH_DB_ADMIN_USERNAME}
+  password: ${COUCH_DB_ADMIN_PASSWORD}
 
 
 logging:

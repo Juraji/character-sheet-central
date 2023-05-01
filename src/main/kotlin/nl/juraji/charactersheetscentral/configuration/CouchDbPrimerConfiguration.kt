@@ -38,12 +38,8 @@ class CouchDbPrimerConfiguration(
 
     private fun createAdminUser() {
         usersService.run {
-            if (!userExists(ADMIN_USERNAME))
-                createUser(ADMIN_USERNAME, ADMIN_USERNAME, CentralUserRole.ADMIN)
+            if (!userExists(config.adminUsername))
+                createUser(config.adminUsername, config.adminPassword, CentralUserRole.ADMIN)
         }
-    }
-
-    companion object {
-        const val ADMIN_USERNAME = "admin"
     }
 }
