@@ -177,20 +177,10 @@ class CouchDbService(
     // Indexes
     fun createIndex(
         databaseName: String,
-        indexName: String,
-        fields: Set<String>,
-        partialFilterSelector: DocumentSelector<CentralDocumentMetaData>? = null
+        createIndexOperation: CreateIndexOperation,
     ) {
         val uri = "/$databaseName/_index"
-        val body = CreateIndexOperation(
-            indexName = indexName,
-            index = Index(
-                fields = fields,
-                partialFilterSelector = partialFilterSelector
-            )
-        )
-
-        restTemplate.postForEntity(uri, body, ApiIndexOperationResult::class.java)
+        restTemplate.postForEntity(uri, createIndexOperation, ApiIndexOperationResult::class.java)
     }
 
     protected fun <R, E : ResponseEntity<R>> E.orThrowNotFound(databaseName: String, forDocumentId: String?): R =

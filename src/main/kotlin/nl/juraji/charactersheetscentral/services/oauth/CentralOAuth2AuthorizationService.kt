@@ -7,6 +7,8 @@ import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
+import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
+import nl.juraji.charactersheetscentral.couchcb.support.Index
 import nl.juraji.charactersheetscentral.couchcb.support.SaveAction
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import org.springframework.beans.factory.annotation.Qualifier
@@ -44,19 +46,30 @@ class CentralOAuth2AuthorizationService(
 
     override fun findByToken(token: String, tokenType: OAuth2TokenType?): OAuth2Authorization? {
         val query: DocumentSelector<CentralOAuthAuthorization> = when (tokenType?.value) {
-            OAuth2ParameterNames.STATE -> DocumentSelector.select("state" to token)
+            OAuth2ParameterNames.STATE -> DocumentSelector
+                .select<CentralOAuthAuthorization>("state" to token)
+                .withIndex(IDX_STATE)
 
-            OAuth2ParameterNames.CODE -> DocumentSelector.select("authorizationCode" to token)
+            OAuth2ParameterNames.CODE -> DocumentSelector
+                .select<CentralOAuthAuthorization>("authorizationCode" to token)
+                .withIndex(IDX_AUTHORIZATION_CODE)
 
-            OAuth2ParameterNames.ACCESS_TOKEN -> DocumentSelector.select("accessToken" to token)
+            OAuth2ParameterNames.ACCESS_TOKEN -> DocumentSelector
+                .select<CentralOAuthAuthorization>("accessToken" to token)
+                .withIndex(IDX_ACCESS_TOKEN)
 
-            OAuth2ParameterNames.REFRESH_TOKEN -> DocumentSelector.select("refreshToken" to token)
+            OAuth2ParameterNames.REFRESH_TOKEN -> DocumentSelector
+                .select<CentralOAuthAuthorization>("refreshToken" to token)
+                .withIndex(IDX_REFRESH_TOKEN)
 
-            else -> DocumentSelector.select(
-                "authorizationCode" to token,
-                "accessToken" to token,
-                "refreshToken" to token,
-            )
+            else -> DocumentSelector
+                .select<CentralOAuthAuthorization>(
+                    "state" to token,
+                    "authorizationCode" to token,
+                    "accessToken" to token,
+                    "refreshToken" to token,
+                )
+                .withIndex(IDX_ALL_TOKENS)
         }
 
         return findOneDocumentBySelector(query)?.toOAuth2Authorization()
@@ -105,6 +118,53 @@ class CentralOAuth2AuthorizationService(
         findDocumentById(authorization.id)?.let(::deleteDocument)
     }
 
+    override fun defineIndexes(): List<CreateIndexOperation> {
+        DocumentSelector.partialFilterSelector(CentralOAuthAuthorization::class)
+
+        return listOf(
+            CreateIndexOperation(
+                name = IDX_STATE,
+                index = Index(
+                    fields = setOf("state"),
+                    partialFilterSelector = DocumentSelector
+                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                )
+            ),
+            CreateIndexOperation(
+                name = IDX_AUTHORIZATION_CODE,
+                index = Index(
+                    fields = setOf("authorizationCode"),
+                    partialFilterSelector = DocumentSelector
+                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                )
+            ),
+            CreateIndexOperation(
+                name = IDX_ACCESS_TOKEN,
+                index = Index(
+                    fields = setOf("accessToken"),
+                    partialFilterSelector = DocumentSelector
+                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                )
+            ),
+            CreateIndexOperation(
+                name = IDX_REFRESH_TOKEN,
+                index = Index(
+                    fields = setOf("refreshToken"),
+                    partialFilterSelector = DocumentSelector
+                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                )
+            ),
+            CreateIndexOperation(
+                name = IDX_ALL_TOKENS,
+                index = Index(
+                    fields = setOf("state", "authorizationCode", "accessToken", "refreshToken"),
+                    partialFilterSelector = DocumentSelector
+                        .partialFilterSelector(CentralOAuthAuthorization::class)
+                )
+            ),
+        )
+    }
+
     private fun CentralOAuthAuthorization.toOAuth2Authorization(): OAuth2Authorization {
         val registeredClient = registeredClientRepository.findById(registeredClientId)
 
@@ -133,5 +193,13 @@ class CentralOAuth2AuthorizationService(
             ?.let { builder.token(it) }
 
         return builder.build()
+    }
+
+    companion object {
+        const val IDX_STATE = "idx__centralOAuthAuthorization__state"
+        const val IDX_AUTHORIZATION_CODE = "idx__centralOAuthAuthorization__authorizationCode"
+        const val IDX_ACCESS_TOKEN = "idx__centralOAuthAuthorization__accessToken"
+        const val IDX_REFRESH_TOKEN = "idx__centralOAuthAuthorization__refreshToken"
+        const val IDX_ALL_TOKENS = "idx__centralOAuthAuthorization__allTokens"
     }
 }

@@ -4,6 +4,7 @@ import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import nl.juraji.charactersheetscentral.couchcb.support.ApiDocumentOperationResult
 import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
+import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
 import nl.juraji.charactersheetscentral.couchcb.support.SaveAction
 import org.springframework.core.ParameterizedTypeReference
 import kotlin.reflect.KClass
@@ -35,4 +36,6 @@ abstract class CouchDbDocumentRepository<T : CentralDocument>(
 
     fun deleteDocument(documentId: String, documentRev: String) =
         couchDb.deleteDocument(databaseName, documentId, documentRev)
+
+    open fun defineIndexes(): List<CreateIndexOperation> = emptyList()
 }

@@ -5,6 +5,8 @@ import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
+import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
+import nl.juraji.charactersheetscentral.couchcb.support.Index
 import nl.juraji.charactersheetscentral.util.assertFalse
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.access.AccessDeniedException
@@ -111,6 +113,23 @@ class CentralUserService(
     override fun userExists(username: String): Boolean =
         documentExistsBySelector(usernameSelector(username))
 
+    override fun defineIndexes(): List<CreateIndexOperation> = listOf(
+        CreateIndexOperation(
+            name = USERNAME_IDX,
+            index = Index(
+                fields = setOf("username"),
+                partialFilterSelector = DocumentSelector
+                    .partialFilterSelector(CentralUser::class)
+            )
+        )
+    )
+
     private fun usernameSelector(username: String): DocumentSelector<CentralUser> =
-        DocumentSelector.select("username" to username.lowercase())
+        DocumentSelector
+            .select<CentralUser>("username" to username.lowercase())
+            .withIndex(USERNAME_IDX)
+
+    companion object {
+        const val USERNAME_IDX = "idx__centralUser__username"
+    }
 }

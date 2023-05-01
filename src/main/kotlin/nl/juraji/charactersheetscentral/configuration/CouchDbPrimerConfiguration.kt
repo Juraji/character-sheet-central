@@ -1,6 +1,7 @@
 package nl.juraji.charactersheetscentral.configuration
 
 import nl.juraji.charactersheetscentral.couchcb.CouchDbApiException
+import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.services.users.CentralUserRole
 import nl.juraji.charactersheetscentral.services.users.CentralUserService
@@ -14,6 +15,7 @@ class CouchDbPrimerConfiguration(
     private val couchDb: CouchDbService,
     private val config: CentralConfiguration,
     private val usersService: CentralUserService,
+    private val documentRepositories: List<CouchDbDocumentRepository<*>>
 ) : InitializingBean {
 
     override fun afterPropertiesSet() {
@@ -29,10 +31,9 @@ class CouchDbPrimerConfiguration(
             .runCatching { createDatabase(databaseName) }
             .catchOrThrow { it is CouchDbApiException && it.httpStatus == HttpStatus.PRECONDITION_FAILED }
 
-        // @formatter:off
-        // TODO Create indexes by query usage
-//        couchDb.createIndex(databaseName, "idx_central_user_username", setOf("username"))
-        // @formatter:on
+        documentRepositories
+            .flatMap(CouchDbDocumentRepository<*>::defineIndexes)
+            .forEach { couchDb.createIndex(databaseName, it) }
     }
 
     private fun createAdminUser() {

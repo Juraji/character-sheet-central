@@ -5,6 +5,8 @@ import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
+import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
+import nl.juraji.charactersheetscentral.couchcb.support.Index
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Repository
 import java.security.SecureRandom
@@ -24,10 +26,12 @@ class CentralRegistrationCodeService(
 
     fun findRegistrationCode(code: String): CentralRegistrationCode? {
         val nowMillis = Instant.now().toEpochMilli()
-        val selector = DocumentSelector.select<CentralRegistrationCode>(
-            "code" to code,
-            "expiresAt" to mapOf(DocumentSelector.OP_GT to nowMillis)
-        )
+        val selector = DocumentSelector
+            .select<CentralRegistrationCode>(
+                "code" to code,
+                "expiresAt" to mapOf(DocumentSelector.Match.GT to nowMillis)
+            )
+            .withIndex(CODE_IDX)
 
         // If there is a document for the above selector the code is valid
         return findOneDocumentBySelector(selector)
@@ -55,10 +59,23 @@ class CentralRegistrationCodeService(
             .joinToString("-")
     }
 
+    override fun defineIndexes(): List<CreateIndexOperation> = listOf(
+        CreateIndexOperation(
+            name = CODE_IDX,
+            index = Index(
+                fields = setOf("code", "expiresAt"),
+                partialFilterSelector = DocumentSelector
+                    .partialFilterSelector(CentralRegistrationCode::class)
+            )
+        )
+    )
+
     companion object {
         const val CODE_CHAR_SRC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         const val CODE_CHUNK_SIZE = 4
         const val CODE_NO_OF_CHUNKS = 4L
         const val CODE_TTL = 86400L // 1 day
+
+        const val CODE_IDX = "idx__centralRegistrationCode__code_expiresAt"
     }
 }

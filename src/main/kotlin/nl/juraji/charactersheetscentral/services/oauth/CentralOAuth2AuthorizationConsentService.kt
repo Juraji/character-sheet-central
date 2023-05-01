@@ -5,6 +5,8 @@ import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
 import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
+import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
+import nl.juraji.charactersheetscentral.couchcb.support.Index
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService
@@ -23,11 +25,13 @@ class CentralOAuth2AuthorizationConsentService(
     override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>>
         get() = object : ParameterizedTypeReference<ApiFindResult<CentralAuthorizationConsent>>() {}
 
-    fun findAllByPrincipal(principalName: String): List<CentralAuthorizationConsentWithClient> =
-        findDocumentsBySelector(DocumentSelector.select("principalName" to principalName))
-            .associateWith { registeredClientRepository.findByClientId(it.registeredClientId) }
-            .filterValues { it != null }
-            .map { (consent, client) -> CentralAuthorizationConsentWithClient(client = client!!, consent = consent) }
+    fun findAllByPrincipal(principalName: String): List<CentralAuthorizationConsentWithClient> = DocumentSelector
+        .select<CentralAuthorizationConsent>("principalName" to principalName)
+        .withIndex(PRINCIPAL_IDX)
+        .let(::findDocumentsBySelector)
+        .associateWith { registeredClientRepository.findByClientId(it.registeredClientId) }
+        .filterValues { it != null }
+        .map { (consent, client) -> CentralAuthorizationConsentWithClient(client = client!!, consent = consent) }
 
     override fun findById(registeredClientId: String, principalName: String): OAuth2AuthorizationConsent? =
         idQuery(registeredClientId, principalName)
@@ -61,11 +65,39 @@ class CentralOAuth2AuthorizationConsentService(
             ?.let(::deleteDocument)
     }
 
+    override fun defineIndexes(): List<CreateIndexOperation> {
+        val partialFilterSelector = DocumentSelector.partialFilterSelector(CentralAuthorizationConsent::class)
+
+        return listOf(
+            CreateIndexOperation(
+                name = PK_IDX,
+                index = Index(
+                    fields = setOf("registeredClientId", "principalName"),
+                    partialFilterSelector = partialFilterSelector
+                )
+            ),
+            CreateIndexOperation(
+                name = PRINCIPAL_IDX,
+                index = Index(
+                    fields = setOf("principalName"),
+                    partialFilterSelector = partialFilterSelector
+                )
+            )
+        )
+    }
+
     private fun idQuery(
         registeredClientId: String,
         principalName: String
-    ): DocumentSelector<CentralAuthorizationConsent> = DocumentSelector.select(
-        "registeredClientId" to registeredClientId,
-        "principalName" to principalName
-    )
+    ): DocumentSelector<CentralAuthorizationConsent> = DocumentSelector
+        .select<CentralAuthorizationConsent>(
+            "registeredClientId" to registeredClientId,
+            "principalName" to principalName
+        )
+        .withIndex(PK_IDX)
+
+    companion object {
+        const val PRINCIPAL_IDX = "idx__centralAuthorizationConsent__principalName"
+        const val PK_IDX = "idx__centralAuthorizationConsent__pk"
+    }
 }
