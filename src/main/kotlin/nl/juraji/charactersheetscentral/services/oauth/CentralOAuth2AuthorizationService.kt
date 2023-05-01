@@ -43,20 +43,19 @@ class CentralOAuth2AuthorizationService(
         findDocumentById(id)?.toOAuth2Authorization()
 
     override fun findByToken(token: String, tokenType: OAuth2TokenType?): OAuth2Authorization? {
-        val tokenValueSelect = mapOf("tokenValue" to token)
         val query: DocumentSelector<CentralOAuthAuthorization> = when (tokenType?.value) {
             OAuth2ParameterNames.STATE -> DocumentSelector.select("state" to token)
 
-            OAuth2ParameterNames.CODE -> DocumentSelector.select("authorizationCode" to tokenValueSelect)
+            OAuth2ParameterNames.CODE -> DocumentSelector.select("authorizationCode" to token)
 
-            OAuth2ParameterNames.ACCESS_TOKEN -> DocumentSelector.select("accessToken" to tokenValueSelect)
+            OAuth2ParameterNames.ACCESS_TOKEN -> DocumentSelector.select("accessToken" to token)
 
-            OAuth2ParameterNames.REFRESH_TOKEN -> DocumentSelector.select("refreshToken" to tokenValueSelect)
+            OAuth2ParameterNames.REFRESH_TOKEN -> DocumentSelector.select("refreshToken" to token)
 
             else -> DocumentSelector.select(
-                "authorizationCode" to tokenValueSelect,
-                "accessToken" to tokenValueSelect,
-                "refreshToken" to tokenValueSelect,
+                "authorizationCode" to token,
+                "accessToken" to token,
+                "refreshToken" to token,
             )
         }
 

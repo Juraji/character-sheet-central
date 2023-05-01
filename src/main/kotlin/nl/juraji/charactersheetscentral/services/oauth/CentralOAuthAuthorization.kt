@@ -11,8 +11,12 @@ data class CentralOAuthAuthorization(
     val authorizedScopes: Set<String>,
     val state: String?,
     val serializedAttributes: String,
+    val authorizationCode: String? = null,
     val serializedAuthorizationCode: String? = null,
+    val accessToken: String? = null,
     val serializedAccessToken: String? = null,
+    val oidcIdToken: String? = null,
     val serializedOidcIdToken: String? = null,
+    val refreshToken: String? = null,
     val serializedRefreshToken: String? = null,
 ) : CentralDocument
