@@ -24,7 +24,7 @@
                     <div class="card-body">
                         <p>
                             The application
-                            <span class="font-weight-bold text-primary" th:text="${clientId}"></span>
+                            <span class="font-weight-bold text-info" th:text="${clientId}"></span>
                             wants to access your account
                             <span class="font-weight-bold" th:text="${principalName}"></span>.
                         </p>
@@ -38,7 +38,7 @@
                                    th:value="${scope.scope}" th:id="${scope.scope}">
                             <label class="form-check-label font-weight-bold" for="newScopeId"
                                    th:for="${scope.scope}" th:text="${scope.scope}"></label>
-                            <p class="text-primary" th:text="${scope.description}"></p>
+                            <p class="text-info" th:text="${scope.description}"></p>
                         </div>
 
                         <p th:if="${not #lists.isEmpty(previouslyApprovedScopes)}">You have already granted the
@@ -49,10 +49,10 @@
                                    th:id="${scope.scope}" disabled checked>
                             <label class="form-check-label font-weight-bold" for="existingScopeId"
                                    th:for="${scope.scope}" th:text="${scope.scope}"></label>
-                            <p class="text-primary" th:text="${scope.description}"></p>
+                            <p class="text-info" th:text="${scope.description}"></p>
                         </div>
 
-                        <button class="btn btn-block btn-primary" type="submit">Sign in</button>
+                        <button class="btn btn-block btn-primary" type="submit">Confirm</button>
                         <button class="btn btn-block btn-outline-danger" type="button" onclick="cancelConsent();">
                             Cancel
                         </button>

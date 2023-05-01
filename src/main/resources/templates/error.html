@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Character Sheets Central - My Apps</title>
+    <th:block th:insert="~{fragments/header.fragment :: headerFiles}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/login}">Character Sheets Central</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row d-flex justify-content-center align-items-center">
+        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+            <h1 class="mb-4">Oops</h1>
+
+            <div class="alert alert-danger" role="alert">
+                Something went wrong!
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

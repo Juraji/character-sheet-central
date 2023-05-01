@@ -8,6 +8,7 @@ import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import nl.juraji.charactersheetscentral.util.assertFalse
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
@@ -37,10 +38,15 @@ class CentralUserService(
 
     override fun loadUserByUsername(username: String): UserDetails =
         findByUsername(username).run {
-            User(
-                username, password, enabled,
-                accountNonExpired, credentialsNonExpired, accountNonLocked, authorities
-            )
+            User.builder()
+                .username(username)
+                .password(password)
+                .disabled(!enabled)
+                .accountExpired(!accountNonExpired)
+                .credentialsExpired(!credentialsNonExpired)
+                .accountLocked(!accountNonLocked)
+                .authorities(authorities.map(::SimpleGrantedAuthority))
+                .build()
         }
 
     fun createUser(username: String, password: String, vararg roles: String) {
@@ -65,7 +71,7 @@ class CentralUserService(
                     accountNonExpired = isAccountNonExpired,
                     accountNonLocked = isAccountNonLocked,
                     credentialsNonExpired = isCredentialsNonExpired,
-                    authorities = authorities.toList(),
+                    authorities = authorities.map { it.authority }.toSet(),
                 )
             }
             .let(::saveDocument)
@@ -78,7 +84,7 @@ class CentralUserService(
                 accountNonExpired = user.isAccountNonExpired,
                 accountNonLocked = user.isAccountNonLocked,
                 credentialsNonExpired = user.isCredentialsNonExpired,
-                authorities = user.authorities.toList(),
+                authorities = user.authorities.map { it.authority }.toSet(),
             )
             .let(::saveDocument)
     }

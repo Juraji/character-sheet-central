@@ -1,5 +1,7 @@
 package nl.juraji.charactersheetscentral.services.oauth
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
@@ -7,7 +9,9 @@ import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
 import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
 import nl.juraji.charactersheetscentral.couchcb.support.SaveAction
 import nl.juraji.charactersheetscentral.util.assertNotNull
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.OAuth2AccessToken
 import org.springframework.security.oauth2.core.OAuth2RefreshToken
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames
@@ -23,6 +27,7 @@ import kotlin.reflect.KClass
 @Repository
 class CentralOAuth2AuthorizationService(
     private val registeredClientRepository: RegisteredClientRepository,
+    @Qualifier("oauth2objectMapper") private val oauth2ObjectMapper: ObjectMapper,
     configuration: CentralConfiguration,
     couchDb: CouchDbService,
 ) : CouchDbDocumentRepository<CentralOAuthAuthorization>(couchDb), OAuth2AuthorizationService {
@@ -72,12 +77,12 @@ class CentralOAuth2AuthorizationService(
         if (existing != null) {
             existing
                 .copy(
-                    attributes = attributes,
                     state = state,
-                    authorizationCode = authorizationCode,
-                    accessToken = accessToken,
-                    oidcIdToken = oidcIdToken,
-                    refreshToken = refreshToken,
+                    serializedAttributes = oauth2ObjectMapper.writeValueAsString(attributes),
+                    serializedAuthorizationCode = oauth2ObjectMapper.writeValueAsString(authorizationCode),
+                    serializedAccessToken = oauth2ObjectMapper.writeValueAsString(accessToken),
+                    serializedOidcIdToken = oauth2ObjectMapper.writeValueAsString(oidcIdToken),
+                    serializedRefreshToken = oauth2ObjectMapper.writeValueAsString(refreshToken),
                 )
                 .let { saveDocument(it, SaveAction.UPDATE) }
         } else {
@@ -85,14 +90,14 @@ class CentralOAuth2AuthorizationService(
                 id = authorization.id,
                 registeredClientId = authorization.registeredClientId,
                 principalName = authorization.principalName,
-                authorizationGrantType = authorization.authorizationGrantType,
+                authorizationGrantType = authorization.authorizationGrantType.value,
                 authorizedScopes = authorization.authorizedScopes,
-                attributes = attributes,
                 state = state,
-                authorizationCode = authorizationCode,
-                accessToken = accessToken,
-                oidcIdToken = oidcIdToken,
-                refreshToken = refreshToken,
+                serializedAttributes = oauth2ObjectMapper.writeValueAsString(attributes),
+                serializedAuthorizationCode = oauth2ObjectMapper.writeValueAsString(authorizationCode),
+                serializedAccessToken = oauth2ObjectMapper.writeValueAsString(accessToken),
+                serializedOidcIdToken = oauth2ObjectMapper.writeValueAsString(oidcIdToken),
+                serializedRefreshToken = oauth2ObjectMapper.writeValueAsString(refreshToken),
             ).let { saveDocument(it, SaveAction.CREATE) }
         }
     }
@@ -107,15 +112,26 @@ class CentralOAuth2AuthorizationService(
         val builder = OAuth2Authorization.withRegisteredClient(registeredClient)
             .id(id)
             .principalName(principalName)
-            .authorizationGrantType(authorizationGrantType)
+            .authorizationGrantType(AuthorizationGrantType(authorizationGrantType))
             .authorizedScopes(authorizedScopes)
-            .attributes { it.putAll(attributes) }
 
         state?.let { builder.attribute(OAuth2ParameterNames.STATE, it) }
-        authorizationCode?.let { builder.token(it) }
-        accessToken?.let { builder.token(it) }
-        oidcIdToken?.let { builder.token(it) }
-        refreshToken?.let { builder.token(it) }
+
+        serializedAttributes
+            .let { oauth2ObjectMapper.readValue<Map<String, Any>>(it) }
+            .let { attrs -> builder.attributes { it.putAll(attrs) } }
+        serializedAuthorizationCode
+            ?.let { oauth2ObjectMapper.readValue(it, OAuth2AuthorizationCode::class.java) }
+            ?.let { builder.token(it) }
+        serializedAccessToken
+            ?.let { oauth2ObjectMapper.readValue(it, OAuth2AccessToken::class.java) }
+            ?.let { builder.token(it) }
+        serializedOidcIdToken
+            ?.let { oauth2ObjectMapper.readValue(it, OidcIdToken::class.java) }
+            ?.let { builder.token(it) }
+        serializedRefreshToken
+            ?.let { oauth2ObjectMapper.readValue(it, OAuth2RefreshToken::class.java) }
+            ?.let { builder.token(it) }
 
         return builder.build()
     }

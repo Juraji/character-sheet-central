@@ -4,7 +4,7 @@ import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
 
 data class DocumentSelector<T : CentralDocument>(
     val selector: Map<String, Any>,
-    val sort: List<Map<String, Any>> = emptyList(),
+    val sort: List<Map<String, Any>>? = null,
     val limit: Int = 25,
     val skip: Int = 0,
     val fields: Set<String>? = null

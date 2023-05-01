@@ -19,9 +19,8 @@ class CouchDbService(
     @Qualifier("couchDbRestTemplate") protected val restTemplate: RestTemplate,
     private val messageSource: MessageSource
 ) {
-    private val genericTypeRef: ParameterizedTypeReference<ApiFindResult<CentralDocumentMetaData>> by lazy {
-        object : ParameterizedTypeReference<ApiFindResult<CentralDocumentMetaData>>() {}
-    }
+    private val genericTypeRef: ParameterizedTypeReference<ApiFindResult<CentralDocumentMetaData>>
+        get() = object : ParameterizedTypeReference<ApiFindResult<CentralDocumentMetaData>>() {}
 
     // Documents
     fun <T : CentralDocument> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
