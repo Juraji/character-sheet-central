@@ -3,19 +3,14 @@ package nl.juraji.charactersheetscentral.services.users
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchdb.CouchDbService
 import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
-import nl.juraji.charactersheetscentral.couchdb.find.FindQuery
-import nl.juraji.charactersheetscentral.couchdb.find.FindResult
-import nl.juraji.charactersheetscentral.couchdb.find.query
-import nl.juraji.charactersheetscentral.couchdb.find.usingIndex
+import nl.juraji.charactersheetscentral.couchdb.find.*
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import nl.juraji.charactersheetscentral.couchdb.indexes.Index
 import nl.juraji.charactersheetscentral.couchdb.indexes.partialFilterSelector
 import nl.juraji.charactersheetscentral.util.assertFalse
 import nl.juraji.charactersheetscentral.util.jackson.restTemplateTypeRef
 import org.springframework.core.ParameterizedTypeReference
-import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsPasswordService
@@ -44,10 +39,10 @@ class CentralUserService(
 
     override fun loadUserByUsername(username: String): UserDetails =
         findByUsername(username).run {
+            // Specifically do not set a password encoder, as the password is already encoded!
             User.builder()
                 .username(username)
                 .password(password)
-                .passwordEncoder(passwordEncoder::encode)
                 .disabled(!enabled)
                 .accountExpired(!accountNonExpired)
                 .credentialsExpired(!credentialsNonExpired)
@@ -106,9 +101,9 @@ class CentralUserService(
      * Current context user only!
      */
     override fun changePassword(oldPassword: String, newPassword: String) {
-        val currentUsername: String =
-            SecurityContextHolder.getContext()?.authentication?.name
-                ?: throw AccessDeniedException("No authenticated user")
+//        val currentUsername: String =
+//            SecurityContextHolder.getContext()?.authentication?.name
+//                ?: throw AccessDeniedException("No authenticated user")
 
         TODO("Not yet implemented")
     }
@@ -131,7 +126,7 @@ class CentralUserService(
     )
 
     private fun usernameSelector(username: String): FindQuery<CentralUser> =
-        query<CentralUser>("username" to username.lowercase()).usingIndex(USERNAME_IDX)
+        query<CentralUser>(eq("username", username.lowercase())).usingIndex(USERNAME_IDX)
 
     companion object {
         const val USERNAME_IDX = "idx__centralUser__username"

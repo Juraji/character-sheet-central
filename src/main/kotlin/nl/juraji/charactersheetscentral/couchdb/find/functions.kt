@@ -49,8 +49,8 @@ fun <T : CentralDocument> FindQuery<T>.appendSelectors(vararg selector: Selector
     this.copy(selector = this.selector + selector.toMap())
 
 /** Builders */
-fun selector(key: String, value: Any): SelectorPair = key to value
-fun selector(key: String, selector: Selector): SelectorPair = key to selector
+fun eq(key: String, value: Any): SelectorPair = key to value
+fun eq(key: String, selector: Selector): SelectorPair = key to selector
 
 /** Combination operators */
 fun and(vararg selector: Selector): Selector = mapOf(Operators.AND to selector.toList())

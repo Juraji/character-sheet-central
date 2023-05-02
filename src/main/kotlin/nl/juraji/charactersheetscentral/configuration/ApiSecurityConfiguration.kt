@@ -1,5 +1,6 @@
 package nl.juraji.charactersheetscentral.configuration
 
+import nl.juraji.charactersheetscentral.util.auth.NoopPasswordEncoder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -54,11 +55,4 @@ class ApiSecurityConfiguration {
             setDefaultPasswordEncoderForMatches(NoopPasswordEncoder())
         }
 
-    class NoopPasswordEncoder : PasswordEncoder {
-        override fun encode(rawPassword: CharSequence): String =
-            throw IllegalStateException("This encoder should not be used for password encoding!")
-
-        override fun matches(rawPassword: CharSequence, encodedPassword: String): Boolean =
-            rawPassword == encodedPassword
-    }
 }

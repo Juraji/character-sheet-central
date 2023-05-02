@@ -48,12 +48,10 @@ class AuthorizationServiceConfig {
     }
 
     @Bean
-    fun jwtDecoder(jwkSource: JWKSource<SecurityContext>): JwtDecoder {
-        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource)
-    }
+    fun jwtDecoder(jwkSource: JWKSource<SecurityContext>): JwtDecoder =
+        OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource)
 
     @Bean
-    fun authorizationServerSettings(): AuthorizationServerSettings {
-        return AuthorizationServerSettings.builder().build()
-    }
+    fun authorizationServerSettings(): AuthorizationServerSettings =
+        AuthorizationServerSettings.builder().build()
 }

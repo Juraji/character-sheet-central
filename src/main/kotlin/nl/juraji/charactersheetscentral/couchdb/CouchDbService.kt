@@ -171,7 +171,7 @@ class CouchDbService(
         return createDocument("_users", doc)
     }
 
-    fun setMemberUserPassword(
+    fun setUserPassword(
         username: String,
         password: String
     ): DocumentOpResult = findUser(username)
@@ -179,7 +179,7 @@ class CouchDbService(
         .run { copy(password = password) }
         .let { updateDocument("_users", it.id, it.rev, it) }
 
-    fun removeMemberUser(username: String) =
+    fun removeUser(username: String) =
         findUser(username)?.let { deleteDocument("_users", it) }
 
 

@@ -3,10 +3,7 @@ package nl.juraji.charactersheetscentral.services.oauth
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchdb.CouchDbService
 import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
-import nl.juraji.charactersheetscentral.couchdb.find.FindQuery
-import nl.juraji.charactersheetscentral.couchdb.find.FindResult
-import nl.juraji.charactersheetscentral.couchdb.find.query
-import nl.juraji.charactersheetscentral.couchdb.find.usingIndex
+import nl.juraji.charactersheetscentral.couchdb.find.*
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import nl.juraji.charactersheetscentral.couchdb.indexes.Index
 import nl.juraji.charactersheetscentral.couchdb.indexes.partialFilterSelector
@@ -31,7 +28,7 @@ class CentralOAuth2AuthorizationConsentService(
         get() = restTemplateTypeRef<FindResult<CentralAuthorizationConsent>>()
 
     fun findAllByPrincipal(principalName: String): List<CentralAuthorizationConsentWithClient> =
-        query<CentralAuthorizationConsent>("principalName" to principalName)
+        query<CentralAuthorizationConsent>(eq("principalName", principalName))
             .usingIndex(PRINCIPAL_IDX)
             .let(::findDocumentsBySelector)
             .associateWith { registeredClientRepository.findByClientId(it.registeredClientId) }
@@ -99,8 +96,8 @@ class CentralOAuth2AuthorizationConsentService(
         registeredClientId: String,
         principalName: String
     ): FindQuery<CentralAuthorizationConsent> = query<CentralAuthorizationConsent>(
-        "registeredClientId" to registeredClientId,
-        "principalName" to principalName
+        eq("registeredClientId", registeredClientId),
+        eq("principalName", principalName),
     ).usingIndex(PK_IDX)
 
     companion object {

@@ -3,15 +3,13 @@ spring:
     log-request-details: true
 
 cs-central:
-  root-db-name: "csc-root"
-  user-db-prefix: "csc-user-"
   admin-username: "admin"
-  admin-password: "password"
+  admin-password: "admin"
 
 couchdb:
   url: "http://localhost:5984/"
-  username: ${cs-central.admin-username}
-  password: ${cs-central.admin-password}
+  username: "admin"
+  password: "password"
 
 logging:
   level:

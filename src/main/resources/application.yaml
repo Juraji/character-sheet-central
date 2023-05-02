@@ -5,7 +5,7 @@ server:
 
 cs-central:
   root-db-name: "csc-root"
-  user-db-prefix: "csc-user-"
+  user-db-prefix: "csc-user-db-"
   admin-username: ${CENTRAL_ADMIN_USERNAME}
   admin-password: ${CENTRAL_ADMIN_PASSWORD}
 

@@ -16,7 +16,7 @@
     "clientSecret": "s@hu*i7LETMA",
     "redirectUri": "https://oauth.pstmn.io/v1/callback",
     "accessTokenTimeToLive": 5,
-    "refreshTokenTimeToLive": 10,
+    "refreshTokenTimeToLive": 120,
     "activeProfile": "development"
   },
   {

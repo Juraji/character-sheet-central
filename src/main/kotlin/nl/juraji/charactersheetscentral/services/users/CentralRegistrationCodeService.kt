@@ -29,8 +29,8 @@ class CentralRegistrationCodeService(
         val nowMillis = Instant.now().toEpochMilli()
         val selector =
             query<CentralRegistrationCode>(
-                selector("code", code),
-                selector("expiresAt", gt(nowMillis))
+                eq("code", code),
+                eq("expiresAt", gt(nowMillis))
             ).usingIndex(CODE_IDX)
 
         // If there is a document for the above selector the code is valid
