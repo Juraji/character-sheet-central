@@ -17,6 +17,7 @@
             <h1 class="mb-4">App Consent</h1>
 
             <form id="consentForm" name="consent-form" method="post" th:action="@{/oauth2/authorize}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <input type="hidden" name="client_id" th:value="${clientId}">
                 <input type="hidden" name="state" th:value="${state}">
 
@@ -35,7 +36,7 @@
 
                         <div th:each="scope: ${scopes}" class="form-group form-check py-1">
                             <input class="form-check-input" type="checkbox" name="scope" id="newScopeId"
-                                   th:value="${scope.scope}" th:id="${scope.scope}">
+                                   th:value="${scope.scope}" th:id="${scope.scope}" required>
                             <label class="form-check-label font-weight-bold" for="newScopeId"
                                    th:for="${scope.scope}" th:text="${scope.scope}"></label>
                             <p class="text-info" th:text="${scope.description}"></p>
