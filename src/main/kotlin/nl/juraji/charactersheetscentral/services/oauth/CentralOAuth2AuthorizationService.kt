@@ -1,6 +1,7 @@
 package nl.juraji.charactersheetscentral.services.oauth
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
@@ -11,8 +12,9 @@ import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
 import nl.juraji.charactersheetscentral.couchcb.support.Index
 import nl.juraji.charactersheetscentral.couchcb.support.SaveAction
 import nl.juraji.charactersheetscentral.util.assertNotNull
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import org.springframework.security.jackson2.CoreJackson2Module
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.OAuth2AccessToken
 import org.springframework.security.oauth2.core.OAuth2RefreshToken
@@ -23,13 +25,17 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
+import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module
+import org.springframework.security.web.jackson2.WebJackson2Module
+import org.springframework.security.web.jackson2.WebServletJackson2Module
+import org.springframework.security.web.server.jackson2.WebServerJackson2Module
 import org.springframework.stereotype.Repository
 import kotlin.reflect.KClass
 
 @Repository
 class CentralOAuth2AuthorizationService(
     private val registeredClientRepository: RegisteredClientRepository,
-    @Qualifier("oauth2objectMapper") private val oauth2ObjectMapper: ObjectMapper,
+    private val objectMapperBuilder: Jackson2ObjectMapperBuilder,
     configuration: CentralConfiguration,
     couchDb: CouchDbService,
 ) : CouchDbDocumentRepository<CentralOAuthAuthorization>(couchDb), OAuth2AuthorizationService {
@@ -40,6 +46,19 @@ class CentralOAuth2AuthorizationService(
 
     override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>>
         get() = object : ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>>() {}
+
+    private val authorizationObjectMapper: ObjectMapper by lazy {
+        objectMapperBuilder
+            .build<ObjectMapper>()
+            .registerModules(
+                CoreJackson2Module(),
+                WebJackson2Module(),
+                WebServerJackson2Module(),
+                WebServletJackson2Module(),
+                JavaTimeModule(),
+                OAuth2AuthorizationServerJackson2Module(),
+            )
+    }
 
     override fun findById(id: String): OAuth2Authorization? =
         findDocumentById(id)?.toOAuth2Authorization()
@@ -78,14 +97,16 @@ class CentralOAuth2AuthorizationService(
     override fun save(authorization: OAuth2Authorization) {
         assertNotNull(authorization.id)
 
-        val ser = oauth2ObjectMapper::writeValueAsString
+        val ser = authorizationObjectMapper::writeValueAsString
 
+        val authorizedScopes = authorization.authorizedScopes
         val state = authorization.getAttribute<String>(OAuth2ParameterNames.STATE)?.takeIf(String::isNotBlank)
         val attributes = ser(authorization.attributes)
 
         val existing = findDocumentById(authorization.id)
         var update: CentralOAuthAuthorization = existing
             ?.copy(
+                authorizedScopes = authorizedScopes,
                 state = state,
                 attributes = attributes,
             )
@@ -94,7 +115,7 @@ class CentralOAuth2AuthorizationService(
                 registeredClientId = authorization.registeredClientId,
                 principalName = authorization.principalName,
                 authorizationGrantType = authorization.authorizationGrantType.value,
-                authorizedScopes = authorization.authorizedScopes,
+                authorizedScopes = authorizedScopes,
                 state = state,
                 attributes = attributes,
             )
@@ -201,7 +222,7 @@ class CentralOAuth2AuthorizationService(
 
         fun readMeta(it: String?): Map<String, Any> =
             if (it == null) emptyMap()
-            else oauth2ObjectMapper.readValue(it, mapTypeRef)
+            else authorizationObjectMapper.readValue(it, mapTypeRef)
 
         val builder = OAuth2Authorization.withRegisteredClient(registeredClient)
             .id(id)
@@ -211,7 +232,7 @@ class CentralOAuth2AuthorizationService(
 
         state?.let { builder.attribute(OAuth2ParameterNames.STATE, it) }
         attributes
-            .let { oauth2ObjectMapper.readValue(it, mapTypeRef) }
+            .let { authorizationObjectMapper.readValue(it, mapTypeRef) }
             .let { attrs -> builder.attributes { it.putAll(attrs) } }
 
         if (authorizationCode != null) {

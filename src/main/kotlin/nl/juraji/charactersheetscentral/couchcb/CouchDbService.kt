@@ -79,7 +79,7 @@ class CouchDbService(
 
         return restTemplate
             .exchange(uri, HttpMethod.PUT, request, ApiDocumentOperationResult::class.java)
-            .orThrowNotFound(databaseName, null)
+            .orThrowNotFound(databaseName, "[NEW]")
     }
 
     private fun <T : CentralDocument> updateDocument(
@@ -99,7 +99,7 @@ class CouchDbService(
 
         return restTemplate
             .exchange(uri, HttpMethod.PUT, request, ApiDocumentOperationResult::class.java)
-            .orThrowNotFound(databaseName, document.id)
+            .orThrowNotFound(databaseName, documentId)
     }
 
     fun deleteDocument(databaseName: String, document: DocumentIdMeta) {
