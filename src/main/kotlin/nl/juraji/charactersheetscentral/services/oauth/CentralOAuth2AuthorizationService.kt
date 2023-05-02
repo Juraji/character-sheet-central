@@ -1,7 +1,7 @@
 package nl.juraji.charactersheetscentral.services.oauth
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
 import nl.juraji.charactersheetscentral.couchcb.CouchDbService
@@ -80,48 +80,67 @@ class CentralOAuth2AuthorizationService(
 
         val ser = oauth2ObjectMapper::writeValueAsString
 
-        val existing = findDocumentById(authorization.id)
-        val attributes = authorization.attributes
         val state = authorization.getAttribute<String>(OAuth2ParameterNames.STATE)?.takeIf(String::isNotBlank)
-        val authorizationCode = authorization.getToken(OAuth2AuthorizationCode::class.java)?.token
-        val accessToken = authorization.getToken(OAuth2AccessToken::class.java)?.token
-        val oidcIdToken = authorization.getToken(OidcIdToken::class.java)?.token
-        val refreshToken = authorization.getToken(OAuth2RefreshToken::class.java)?.token
+        val attributes = ser(authorization.attributes)
 
-        if (existing != null) {
-            existing
-                .copy(
-                    state = state,
-                    serializedAttributes = oauth2ObjectMapper.writeValueAsString(attributes),
-                    authorizationCode = authorizationCode?.tokenValue,
-                    serializedAuthorizationCode = ser(authorizationCode),
-                    accessToken = accessToken?.tokenValue,
-                    serializedAccessToken = ser(accessToken),
-                    oidcIdToken = oidcIdToken?.tokenValue,
-                    serializedOidcIdToken = ser(oidcIdToken),
-                    refreshToken = refreshToken?.tokenValue,
-                    serializedRefreshToken = ser(refreshToken),
-                )
-                .let { saveDocument(it, SaveAction.UPDATE) }
-        } else {
-            CentralOAuthAuthorization(
+        val existing = findDocumentById(authorization.id)
+        var update: CentralOAuthAuthorization = existing
+            ?.copy(
+                state = state,
+                attributes = attributes,
+            )
+            ?: CentralOAuthAuthorization(
                 id = authorization.id,
                 registeredClientId = authorization.registeredClientId,
                 principalName = authorization.principalName,
                 authorizationGrantType = authorization.authorizationGrantType.value,
                 authorizedScopes = authorization.authorizedScopes,
                 state = state,
-                serializedAttributes = oauth2ObjectMapper.writeValueAsString(attributes),
-                authorizationCode = authorizationCode?.tokenValue,
-                serializedAuthorizationCode = ser(authorizationCode),
-                accessToken = accessToken?.tokenValue,
-                serializedAccessToken = ser(accessToken),
-                oidcIdToken = oidcIdToken?.tokenValue,
-                serializedOidcIdToken = ser(oidcIdToken),
-                refreshToken = refreshToken?.tokenValue,
-                serializedRefreshToken = ser(refreshToken),
-            ).let { saveDocument(it, SaveAction.CREATE) }
+                attributes = attributes,
+            )
+
+        authorization.getToken(OAuth2AuthorizationCode::class.java)?.let {
+            update = update.copy(
+                authorizationCode = it.token.tokenValue,
+                authorizationCodeIssuedAt = it.token.issuedAt,
+                authorizationCodeExpiresAt = it.token.expiresAt,
+                authorizationCodeMetadata = ser(it.metadata),
+            )
         }
+
+        authorization.getToken(OAuth2AccessToken::class.java)?.let {
+            update = update.copy(
+                accessToken = it.token.tokenValue,
+                accessTokenIssuedAt = it.token.issuedAt,
+                accessTokenExpiresAt = it.token.expiresAt,
+                accessTokenScopes = it.token.scopes,
+                accessTokenMetadata = ser(it.metadata),
+            )
+        }
+
+        authorization.getToken(OidcIdToken::class.java)?.let {
+            update = update.copy(
+                oidcIdToken = it.token.tokenValue,
+                oidcIdTokenIssuedAt = it.token.issuedAt,
+                oidcIdTokenExpiresAt = it.token.expiresAt,
+                oidcIdTokenMetadata = ser(it.metadata),
+            )
+        }
+
+        authorization.getToken(OAuth2RefreshToken::class.java)?.let {
+            update = update.copy(
+                refreshToken = it.token.tokenValue,
+                refreshTokenIssuedAt = it.token.issuedAt,
+                refreshTokenExpiresAt = it.token.expiresAt,
+                refreshTokenMetadata = ser(it.metadata),
+            )
+        }
+
+        when (existing) {
+            null -> saveDocument(update, SaveAction.CREATE)
+            else -> saveDocument(update, SaveAction.UPDATE)
+        }
+
     }
 
     override fun remove(authorization: OAuth2Authorization) {
@@ -130,7 +149,7 @@ class CentralOAuth2AuthorizationService(
 
     override fun defineIndexes(): List<CreateIndexOperation> {
         val selector = DocumentSelector.partialFilterSelector(CentralOAuthAuthorization::class)
-        fun selectNonNull(field:String): Pair<String, Any> = field to mapOf(DocumentSelector.Match.TYPE to "string")
+        fun selectNonNull(field: String): Pair<String, Any> = field to mapOf(DocumentSelector.Match.TYPE to "string")
 
         return listOf(
             CreateIndexOperation(
@@ -175,8 +194,14 @@ class CentralOAuth2AuthorizationService(
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun CentralOAuthAuthorization.toOAuth2Authorization(): OAuth2Authorization {
         val registeredClient = registeredClientRepository.findById(registeredClientId)
+        val mapTypeRef = jacksonTypeRef<Map<String, Any>>()
+
+        fun readMeta(it: String?): Map<String, Any> =
+            if (it == null) emptyMap()
+            else oauth2ObjectMapper.readValue(it, mapTypeRef)
 
         val builder = OAuth2Authorization.withRegisteredClient(registeredClient)
             .id(id)
@@ -185,22 +210,60 @@ class CentralOAuth2AuthorizationService(
             .authorizedScopes(authorizedScopes)
 
         state?.let { builder.attribute(OAuth2ParameterNames.STATE, it) }
-
-        serializedAttributes
-            .let { oauth2ObjectMapper.readValue<Map<String, Any>>(it) }
+        attributes
+            .let { oauth2ObjectMapper.readValue(it, mapTypeRef) }
             .let { attrs -> builder.attributes { it.putAll(attrs) } }
-        serializedAuthorizationCode
-            ?.let { oauth2ObjectMapper.readValue(it, OAuth2AuthorizationCode::class.java) }
-            ?.let { builder.token(it) }
-        serializedAccessToken
-            ?.let { oauth2ObjectMapper.readValue(it, OAuth2AccessToken::class.java) }
-            ?.let { builder.token(it) }
-        serializedOidcIdToken
-            ?.let { oauth2ObjectMapper.readValue(it, OidcIdToken::class.java) }
-            ?.let { builder.token(it) }
-        serializedRefreshToken
-            ?.let { oauth2ObjectMapper.readValue(it, OAuth2RefreshToken::class.java) }
-            ?.let { builder.token(it) }
+
+        if (authorizationCode != null) {
+            val metaData = readMeta(authorizationCodeMetadata)
+
+            val token = OAuth2AuthorizationCode(
+                authorizationCode,
+                authorizationCodeIssuedAt,
+                authorizationCodeExpiresAt
+            )
+
+            builder.token(token) { it.putAll(metaData) }
+        }
+
+        if (accessToken != null) {
+            val metaData = readMeta(accessTokenMetadata)
+
+            val token = OAuth2AccessToken(
+                OAuth2AccessToken.TokenType.BEARER,
+                accessToken,
+                accessTokenIssuedAt,
+                accessTokenExpiresAt
+            )
+
+            builder.token(token) { it.putAll(metaData) }
+        }
+
+        if (oidcIdToken != null) {
+            val metaData = readMeta(oidcIdTokenMetadata)
+            val claims = metaData[OAuth2Authorization.Token.CLAIMS_METADATA_NAME] as Map<String, Any>
+
+            val token = OidcIdToken(
+                oidcIdToken,
+                oidcIdTokenIssuedAt,
+                oidcIdTokenExpiresAt,
+                claims
+            )
+
+            builder.token(token) { it.putAll(metaData) }
+        }
+
+        if (refreshToken != null) {
+            val metaData = readMeta(refreshTokenMetadata)
+
+            val token = OAuth2RefreshToken(
+                refreshToken,
+                refreshTokenIssuedAt,
+                refreshTokenExpiresAt
+            )
+
+            builder.token(token) { it.putAll(metaData) }
+        }
 
         return builder.build()
     }
