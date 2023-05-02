@@ -1,8 +1,10 @@
 package nl.juraji.charactersheetscentral.couchdb
 
 import nl.juraji.charactersheetscentral.couchdb.documents.*
+import nl.juraji.charactersheetscentral.couchdb.find.FindQuery
 import nl.juraji.charactersheetscentral.couchdb.find.FindResult
-import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.find.singleResult
+import nl.juraji.charactersheetscentral.couchdb.find.withFields
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import nl.juraji.charactersheetscentral.couchdb.indexes.IndexOpResult
 import nl.juraji.charactersheetscentral.couchdb.support.*
@@ -10,6 +12,7 @@ import nl.juraji.charactersheetscentral.couchdb.users.DbUserDocument
 import nl.juraji.charactersheetscentral.couchdb.users.SetDatabaseUsersOp
 import nl.juraji.charactersheetscentral.couchdb.users.Users
 import nl.juraji.charactersheetscentral.util.assertNotNull
+import nl.juraji.charactersheetscentral.util.jackson.restTemplateTypeRef
 import nl.juraji.charactersheetscentral.util.l
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.MessageSource
@@ -26,7 +29,7 @@ class CouchDbService(
     private val messageSource: MessageSource
 ) {
     private val genericTypeRef: ParameterizedTypeReference<FindResult<CentralDocumentMetaData>>
-        get() = object : ParameterizedTypeReference<FindResult<CentralDocumentMetaData>>() {}
+        get() = restTemplateTypeRef<FindResult<CentralDocumentMetaData>>()
 
     // Documents
     fun <T : CentralDocument> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
@@ -34,22 +37,22 @@ class CouchDbService(
 
     fun <T : CentralDocument> findOneDocumentBySelector(
         databaseName: String,
-        query: Selector<T>,
+        query: FindQuery<T>,
         typeReference: ParameterizedTypeReference<FindResult<T>>
     ): T? = findDocumentBySelector(databaseName, query.singleResult(), typeReference).firstOrNull()
 
-    fun documentExistsBySelector(databaseName: String, query: Selector<*>): Boolean {
+    fun documentExistsBySelector(databaseName: String, query: FindQuery<*>): Boolean {
         // This is a hack, as the input query type will never match the generic type reference used for deserialization.
         // But this does not matter, as we never actually need the list contents, just whether it has content or not.
         @Suppress("UNCHECKED_CAST")
-        query as Selector<CentralDocumentMetaData>
+        query as FindQuery<CentralDocumentMetaData>
         // Selects the minimal fields required to optimize query
         return findDocumentBySelector(databaseName, query.withFields().singleResult(), genericTypeRef).isNotEmpty()
     }
 
     fun <T : CentralDocument> findDocumentBySelector(
         databaseName: String,
-        query: Selector<T>,
+        query: FindQuery<T>,
         typeReference: ParameterizedTypeReference<FindResult<T>>
     ): List<T> {
         val uri = "/$databaseName/_find"

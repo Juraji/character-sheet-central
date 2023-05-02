@@ -7,11 +7,12 @@ import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchdb.CouchDbService
 import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
 import nl.juraji.charactersheetscentral.couchdb.documents.SaveType
-import nl.juraji.charactersheetscentral.couchdb.find.FindResult
-import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.find.*
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import nl.juraji.charactersheetscentral.couchdb.indexes.Index
+import nl.juraji.charactersheetscentral.couchdb.indexes.partialFilterSelector
 import nl.juraji.charactersheetscentral.util.assertNotNull
+import nl.juraji.charactersheetscentral.util.jackson.restTemplateTypeRef
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.security.jackson2.CoreJackson2Module
@@ -45,7 +46,7 @@ class CentralOAuth2AuthorizationService(
     override val documentClass: KClass<CentralOAuthAuthorization> = CentralOAuthAuthorization::class
 
     override val documentFindTypeRef: ParameterizedTypeReference<FindResult<CentralOAuthAuthorization>>
-        get() = object : ParameterizedTypeReference<FindResult<CentralOAuthAuthorization>>() {}
+        get() = restTemplateTypeRef<FindResult<CentralOAuthAuthorization>>()
 
     private val authorizationObjectMapper: ObjectMapper by lazy {
         objectMapperBuilder
@@ -64,31 +65,26 @@ class CentralOAuth2AuthorizationService(
         findDocumentById(id)?.toOAuth2Authorization()
 
     override fun findByToken(token: String, tokenType: OAuth2TokenType?): OAuth2Authorization? {
-        val query: Selector<CentralOAuthAuthorization> = when (tokenType?.value) {
-            OAuth2ParameterNames.STATE -> Selector
-                .select<CentralOAuthAuthorization>("state" to token)
-                .withIndex(IDX_STATE)
+        val query: FindQuery<CentralOAuthAuthorization> = when (tokenType?.value) {
+            OAuth2ParameterNames.STATE -> query<CentralOAuthAuthorization>("state" to token)
+                .usingIndex(IDX_STATE)
 
-            OAuth2ParameterNames.CODE -> Selector
-                .select<CentralOAuthAuthorization>("authorizationCode" to token)
-                .withIndex(IDX_AUTHORIZATION_CODE)
+            OAuth2ParameterNames.CODE -> query<CentralOAuthAuthorization>("authorizationCode" to token)
+                .usingIndex(IDX_AUTHORIZATION_CODE)
 
-            OAuth2ParameterNames.ACCESS_TOKEN -> Selector
-                .select<CentralOAuthAuthorization>("accessToken" to token)
-                .withIndex(IDX_ACCESS_TOKEN)
+            OAuth2ParameterNames.ACCESS_TOKEN -> query<CentralOAuthAuthorization>("accessToken" to token)
+                .usingIndex(IDX_ACCESS_TOKEN)
 
-            OAuth2ParameterNames.REFRESH_TOKEN -> Selector
-                .select<CentralOAuthAuthorization>("refreshToken" to token)
-                .withIndex(IDX_REFRESH_TOKEN)
+            OAuth2ParameterNames.REFRESH_TOKEN -> query<CentralOAuthAuthorization>("refreshToken" to token)
+                .usingIndex(IDX_REFRESH_TOKEN)
 
-            else -> Selector
-                .select<CentralOAuthAuthorization>(
-                    "state" to token,
-                    "authorizationCode" to token,
-                    "accessToken" to token,
-                    "refreshToken" to token,
-                )
-                .withIndex(IDX_ALL_TOKENS)
+            else -> query<CentralOAuthAuthorization>(
+                "state" to token,
+                "authorizationCode" to token,
+                "accessToken" to token,
+                "refreshToken" to token,
+            )
+                .usingIndex(IDX_ALL_TOKENS)
         }
 
         return findOneDocumentBySelector(query)?.toOAuth2Authorization()
@@ -169,8 +165,8 @@ class CentralOAuth2AuthorizationService(
     }
 
     override fun defineIndexes(): List<CreateIndexOp> {
-        val selector = Selector.partialFilterSelector(CentralOAuthAuthorization::class)
-        fun selectNonNull(field: String): Pair<String, Any> = field to mapOf(Selector.Match.TYPE to "string")
+        val selector = partialFilterSelector(CentralOAuthAuthorization::class)
+        fun selectNonNull(field: String): Pair<String, Any> = field to mapOf(Operators.TYPE to "string")
 
         return listOf(
             CreateIndexOp(

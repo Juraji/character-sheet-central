@@ -3,10 +3,11 @@ package nl.juraji.charactersheetscentral.services.users
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchdb.CouchDbService
 import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
-import nl.juraji.charactersheetscentral.couchdb.find.FindResult
-import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.find.*
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import nl.juraji.charactersheetscentral.couchdb.indexes.Index
+import nl.juraji.charactersheetscentral.couchdb.indexes.partialFilterSelector
+import nl.juraji.charactersheetscentral.util.jackson.restTemplateTypeRef
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Repository
 import java.security.SecureRandom
@@ -22,16 +23,15 @@ class CentralRegistrationCodeService(
     override val databaseName: String = configuration.rootDbName
     override val documentClass: KClass<CentralRegistrationCode> = CentralRegistrationCode::class
     override val documentFindTypeRef: ParameterizedTypeReference<FindResult<CentralRegistrationCode>>
-        get() = object : ParameterizedTypeReference<FindResult<CentralRegistrationCode>>() {}
+        get() = restTemplateTypeRef<FindResult<CentralRegistrationCode>>()
 
     fun findRegistrationCode(code: String): CentralRegistrationCode? {
         val nowMillis = Instant.now().toEpochMilli()
-        val selector = Selector
-            .select<CentralRegistrationCode>(
-                "code" to code,
-                "expiresAt" to mapOf(Selector.Match.GT to nowMillis)
-            )
-            .withIndex(CODE_IDX)
+        val selector =
+            query<CentralRegistrationCode>(
+                selector("code", code),
+                selector("expiresAt", gt(nowMillis))
+            ).usingIndex(CODE_IDX)
 
         // If there is a document for the above selector the code is valid
         return findOneDocumentBySelector(selector)
@@ -64,8 +64,7 @@ class CentralRegistrationCodeService(
             name = CODE_IDX,
             index = Index(
                 fields = setOf("code", "expiresAt"),
-                partialFilterSelector = Selector
-                    .partialFilterSelector(CentralRegistrationCode::class)
+                partialFilterSelector = partialFilterSelector(CentralRegistrationCode::class)
             )
         )
     )

@@ -3,11 +3,15 @@ package nl.juraji.charactersheetscentral.services.users
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
 import nl.juraji.charactersheetscentral.couchdb.CouchDbService
 import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
+import nl.juraji.charactersheetscentral.couchdb.find.FindQuery
 import nl.juraji.charactersheetscentral.couchdb.find.FindResult
-import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.find.query
+import nl.juraji.charactersheetscentral.couchdb.find.usingIndex
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import nl.juraji.charactersheetscentral.couchdb.indexes.Index
+import nl.juraji.charactersheetscentral.couchdb.indexes.partialFilterSelector
 import nl.juraji.charactersheetscentral.util.assertFalse
+import nl.juraji.charactersheetscentral.util.jackson.restTemplateTypeRef
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -24,15 +28,15 @@ import kotlin.reflect.KClass
 @Repository
 class CentralUserService(
     private val passwordEncoder: PasswordEncoder,
-    configuration: CentralConfiguration,
-    couchDb: CouchDbService,
+    private val couchDb: CouchDbService,
+    private val configuration: CentralConfiguration,
 ) : DocumentRepository<CentralUser>(couchDb), UserDetailsManager, UserDetailsPasswordService {
     override val databaseName: String = configuration.rootDbName
 
     override val documentClass: KClass<CentralUser> = CentralUser::class
 
     override val documentFindTypeRef: ParameterizedTypeReference<FindResult<CentralUser>>
-        get() = object : ParameterizedTypeReference<FindResult<CentralUser>>() {}
+        get() = restTemplateTypeRef<FindResult<CentralUser>>()
 
     fun findByUsername(username: String): CentralUser =
         findOneDocumentBySelector(usernameSelector(username))
@@ -60,6 +64,8 @@ class CentralUserService(
             .roles(*roles)
             .build()
             .let(::createUser)
+
+        couchDb.createDatabase(configuration.userDbPrefix + username)
     }
 
     override fun createUser(user: UserDetails) {
@@ -119,16 +125,13 @@ class CentralUserService(
             name = USERNAME_IDX,
             index = Index(
                 fields = setOf("username"),
-                partialFilterSelector = Selector
-                    .partialFilterSelector(CentralUser::class)
+                partialFilterSelector = partialFilterSelector(CentralUser::class)
             )
         )
     )
 
-    private fun usernameSelector(username: String): Selector<CentralUser> =
-        Selector
-            .select<CentralUser>("username" to username.lowercase())
-            .withIndex(USERNAME_IDX)
+    private fun usernameSelector(username: String): FindQuery<CentralUser> =
+        query<CentralUser>("username" to username.lowercase()).usingIndex(USERNAME_IDX)
 
     companion object {
         const val USERNAME_IDX = "idx__centralUser__username"

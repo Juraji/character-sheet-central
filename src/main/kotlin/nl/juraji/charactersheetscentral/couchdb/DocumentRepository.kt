@@ -3,8 +3,9 @@ package nl.juraji.charactersheetscentral.couchdb
 import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
 import nl.juraji.charactersheetscentral.couchdb.documents.DocumentOpResult
 import nl.juraji.charactersheetscentral.couchdb.documents.SaveType
+import nl.juraji.charactersheetscentral.couchdb.find.FindQuery
 import nl.juraji.charactersheetscentral.couchdb.find.FindResult
-import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.find.singleResult
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import org.springframework.core.ParameterizedTypeReference
 import kotlin.reflect.KClass
@@ -19,13 +20,13 @@ abstract class DocumentRepository<T : CentralDocument>(
     fun findDocumentById(documentId: String): T? =
         couchDb.findDocumentById(databaseName, documentId, documentClass)
 
-    fun findOneDocumentBySelector(query: Selector<T>): T? =
+    fun findOneDocumentBySelector(query: FindQuery<T>): T? =
         couchDb.findOneDocumentBySelector(databaseName, query.singleResult(), documentFindTypeRef)
 
-    fun documentExistsBySelector(query: Selector<T>): Boolean =
+    fun documentExistsBySelector(query: FindQuery<T>): Boolean =
         couchDb.documentExistsBySelector(databaseName, query)
 
-    fun findDocumentsBySelector(query: Selector<T>): List<T> =
+    fun findDocumentsBySelector(query: FindQuery<T>): List<T> =
         couchDb.findDocumentBySelector(databaseName, query, documentFindTypeRef)
 
     fun saveDocument(document: T, action: SaveType = SaveType.AUTO): DocumentOpResult =

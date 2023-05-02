@@ -39,7 +39,12 @@ class CouchDbPrimerConfiguration(
     private fun createAdminUser() {
         usersService.run {
             if (!userExists(config.adminUsername))
-                createUser(config.adminUsername, config.adminPassword, CentralUserRole.ADMIN)
+                createUser(
+                    config.adminUsername,
+                    config.adminPassword,
+                    CentralUserRole.ADMIN,
+                    CentralUserRole.COUCH_DB_ACCESS
+                )
         }
     }
 }

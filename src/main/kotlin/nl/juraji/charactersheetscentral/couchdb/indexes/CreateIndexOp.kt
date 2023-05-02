@@ -2,7 +2,7 @@ package nl.juraji.charactersheetscentral.couchdb.indexes
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
-import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.find.FindQuery
 
 data class Index(
     val fields: Set<String>,
@@ -11,7 +11,7 @@ data class Index(
 ) {
     constructor(
         fields: Set<String>,
-        partialFilterSelector: Selector<out CentralDocument>? = null
+        partialFilterSelector: FindQuery<out CentralDocument>? = null
     ) : this(fields, partialFilterSelector?.selector)
 }
 
