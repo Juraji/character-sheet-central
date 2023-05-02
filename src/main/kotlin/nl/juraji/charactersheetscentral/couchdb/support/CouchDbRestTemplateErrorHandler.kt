@@ -1,7 +1,6 @@
-package nl.juraji.charactersheetscentral.couchcb.support
+package nl.juraji.charactersheetscentral.couchdb.support
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import nl.juraji.charactersheetscentral.couchcb.CouchDbApiException
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import nl.juraji.charactersheetscentral.util.l
 import org.springframework.context.MessageSource
@@ -23,7 +22,7 @@ class CouchDbRestTemplateErrorHandler(
         val message = when (statusCode) {
             HttpStatus.NOT_FOUND -> null // Ignore not founds, business logic should handle this
             HttpStatus.BAD_REQUEST -> objectMapper
-                .runCatching { readValue(response.body, ApiOperationError::class.java) }
+                .runCatching { readValue(response.body, CouchOperationError::class.java) }
                 .map { assertNotNull(it.reason) }
                 .map { messages.l("couchDbApi.responses.badRequest", it) }
                 .getOrElse { messages.l("couchDbApi.responses.badRequestUnknown") }
@@ -33,7 +32,7 @@ class CouchDbRestTemplateErrorHandler(
             HttpStatus.CONFLICT -> messages.l("couchDbApi.responses.conflict")
 
             HttpStatus.PRECONDITION_FAILED -> response.body
-                .let { objectMapper.readValue(it, ApiOperationError::class.java) }
+                .let { objectMapper.readValue(it, CouchOperationError::class.java) }
                 .takeIf { it.reason != null }
                 ?.let { messages.l("couchDbApi.responses.preconditionFailed", it) }
                 ?: messages.l("couchDbApi.responses.preconditionFailedUnknown")

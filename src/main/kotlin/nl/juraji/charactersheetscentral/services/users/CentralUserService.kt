@@ -1,12 +1,12 @@
 package nl.juraji.charactersheetscentral.services.users
 
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
-import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
-import nl.juraji.charactersheetscentral.couchcb.CouchDbService
-import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
-import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
-import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
-import nl.juraji.charactersheetscentral.couchcb.support.Index
+import nl.juraji.charactersheetscentral.couchdb.CouchDbService
+import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
+import nl.juraji.charactersheetscentral.couchdb.find.FindResult
+import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
+import nl.juraji.charactersheetscentral.couchdb.indexes.Index
 import nl.juraji.charactersheetscentral.util.assertFalse
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.security.access.AccessDeniedException
@@ -26,13 +26,13 @@ class CentralUserService(
     private val passwordEncoder: PasswordEncoder,
     configuration: CentralConfiguration,
     couchDb: CouchDbService,
-) : CouchDbDocumentRepository<CentralUser>(couchDb), UserDetailsManager, UserDetailsPasswordService {
+) : DocumentRepository<CentralUser>(couchDb), UserDetailsManager, UserDetailsPasswordService {
     override val databaseName: String = configuration.rootDbName
 
     override val documentClass: KClass<CentralUser> = CentralUser::class
 
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralUser>>
-        get() = object : ParameterizedTypeReference<ApiFindResult<CentralUser>>() {}
+    override val documentFindTypeRef: ParameterizedTypeReference<FindResult<CentralUser>>
+        get() = object : ParameterizedTypeReference<FindResult<CentralUser>>() {}
 
     fun findByUsername(username: String): CentralUser =
         findOneDocumentBySelector(usernameSelector(username))
@@ -114,19 +114,19 @@ class CentralUserService(
     override fun userExists(username: String): Boolean =
         documentExistsBySelector(usernameSelector(username))
 
-    override fun defineIndexes(): List<CreateIndexOperation> = listOf(
-        CreateIndexOperation(
+    override fun defineIndexes(): List<CreateIndexOp> = listOf(
+        CreateIndexOp(
             name = USERNAME_IDX,
             index = Index(
                 fields = setOf("username"),
-                partialFilterSelector = DocumentSelector
+                partialFilterSelector = Selector
                     .partialFilterSelector(CentralUser::class)
             )
         )
     )
 
-    private fun usernameSelector(username: String): DocumentSelector<CentralUser> =
-        DocumentSelector
+    private fun usernameSelector(username: String): Selector<CentralUser> =
+        Selector
             .select<CentralUser>("username" to username.lowercase())
             .withIndex(USERNAME_IDX)
 

@@ -1,8 +1,8 @@
 package nl.juraji.charactersheetscentral.configuration
 
-import nl.juraji.charactersheetscentral.couchcb.CouchDbApiException
-import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
-import nl.juraji.charactersheetscentral.couchcb.CouchDbService
+import nl.juraji.charactersheetscentral.couchdb.CouchDbService
+import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
+import nl.juraji.charactersheetscentral.couchdb.support.CouchDbApiException
 import nl.juraji.charactersheetscentral.services.users.CentralUserRole
 import nl.juraji.charactersheetscentral.services.users.CentralUserService
 import nl.juraji.charactersheetscentral.util.catchOrThrow
@@ -15,15 +15,15 @@ class CouchDbPrimerConfiguration(
     private val couchDb: CouchDbService,
     private val config: CentralConfiguration,
     private val usersService: CentralUserService,
-    private val documentRepositories: List<CouchDbDocumentRepository<*>>
+    private val documentRepositories: List<DocumentRepository<*>>
 ) : InitializingBean {
 
     override fun afterPropertiesSet() {
-        this.createAuthorizationsDatabase()
+        this.createRootDatabase()
         this.createAdminUser()
     }
 
-    private fun createAuthorizationsDatabase() {
+    private fun createRootDatabase() {
         val databaseName = config.rootDbName
 
         // Create Database
@@ -32,7 +32,7 @@ class CouchDbPrimerConfiguration(
             .catchOrThrow { it is CouchDbApiException && it.httpStatus == HttpStatus.PRECONDITION_FAILED }
 
         documentRepositories
-            .flatMap(CouchDbDocumentRepository<*>::defineIndexes)
+            .flatMap(DocumentRepository<*>::defineIndexes)
             .forEach { couchDb.createIndex(databaseName, it) }
     }
 

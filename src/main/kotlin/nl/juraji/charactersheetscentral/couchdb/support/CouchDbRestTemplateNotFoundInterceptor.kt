@@ -1,4 +1,4 @@
-package nl.juraji.charactersheetscentral.couchcb.support
+package nl.juraji.charactersheetscentral.couchdb.support
 
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpRequest

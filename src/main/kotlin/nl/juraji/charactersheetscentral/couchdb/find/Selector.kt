@@ -1,13 +1,13 @@
-package nl.juraji.charactersheetscentral.couchcb.find
+package nl.juraji.charactersheetscentral.couchdb.find
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
+import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
 import kotlin.reflect.KClass
 
 /**
  * See https://docs.couchdb.org/en/stable/api/database/find.html for more information
  */
-data class DocumentSelector<T : CentralDocument>(
+data class Selector<T : CentralDocument>(
     val selector: Map<String, Any>,
     val sort: List<Map<String, Any>>? = null,
     val limit: Int = 25,
@@ -19,14 +19,14 @@ data class DocumentSelector<T : CentralDocument>(
     /**
      * Map selector to match only a single document
      */
-    fun singleResult(): DocumentSelector<T> = this.copy(limit = 1, skip = 0)
+    fun singleResult(): Selector<T> = this.copy(limit = 1, skip = 0)
 
     /**
      * Include only specific fields in the result documents.
      * Note: If [includeSelected] is true (default), the root fields in the selector are also included in the fields
      * to make it so CouchDB can use the most appropriate index
      */
-    fun withFields(vararg fields: String, includeSelected: Boolean = true): DocumentSelector<T> {
+    fun withFields(vararg fields: String, includeSelected: Boolean = true): Selector<T> {
         val selectFields = if (includeSelected) fields.toSet() + selector.keys else fields.toSet()
         return this.copy(fields = selectFields)
     }
@@ -35,25 +35,25 @@ data class DocumentSelector<T : CentralDocument>(
      * Use a specific index for this query.
      * The [index] can be the name of a design document or index name
      */
-    fun withIndex(vararg index: String): DocumentSelector<T> {
+    fun withIndex(vararg index: String): Selector<T> {
         return this.copy(useIndex = index.toSet())
     }
 
     /**
      * Append/merge field selectors to this instance
      */
-    fun appendSelectors(vararg selector: Pair<String, Any>): DocumentSelector<T> =
+    fun appendSelectors(vararg selector: Pair<String, Any>): Selector<T> =
         this.copy(selector = this.selector + selector.toMap())
 
     companion object {
-        inline fun <reified T : CentralDocument> select(vararg selector: Pair<String, Any>): DocumentSelector<T> =
-            DocumentSelector(mapOf("modelType" to T::class.simpleName!!, *selector))
+        inline fun <reified T : CentralDocument> select(vararg selector: Pair<String, Any>): Selector<T> =
+            Selector(mapOf("modelType" to T::class.simpleName!!, *selector))
 
         fun <T : CentralDocument> partialFilterSelector(
             modelType: KClass<T>,
             vararg selector: Pair<String, Any>
-        ): DocumentSelector<T> =
-            DocumentSelector(mapOf("modelType" to modelType.simpleName!!, *selector))
+        ): Selector<T> =
+            Selector(mapOf("modelType" to modelType.simpleName!!, *selector))
     }
 
     // Combination operators

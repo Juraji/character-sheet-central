@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.services.oauth
 
-import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
+import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient
 
 data class CentralAuthorizationConsent(

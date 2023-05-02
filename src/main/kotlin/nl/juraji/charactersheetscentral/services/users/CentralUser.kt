@@ -1,6 +1,6 @@
 package nl.juraji.charactersheetscentral.services.users
 
-import nl.juraji.charactersheetscentral.couchcb.support.CentralDocument
+import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
 
 data class CentralUser(
     override val id: String? = null,

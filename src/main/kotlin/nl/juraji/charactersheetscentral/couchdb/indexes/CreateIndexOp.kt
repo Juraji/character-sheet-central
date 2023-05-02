@@ -1,7 +1,8 @@
-package nl.juraji.charactersheetscentral.couchcb.support
+package nl.juraji.charactersheetscentral.couchdb.indexes
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
+import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
+import nl.juraji.charactersheetscentral.couchdb.find.Selector
 
 data class Index(
     val fields: Set<String>,
@@ -10,11 +11,11 @@ data class Index(
 ) {
     constructor(
         fields: Set<String>,
-        partialFilterSelector: DocumentSelector<out CentralDocument>? = null
+        partialFilterSelector: Selector<out CentralDocument>? = null
     ) : this(fields, partialFilterSelector?.selector)
 }
 
-data class CreateIndexOperation(
+data class CreateIndexOp(
     val name: String,
     val index: Index,
     @JsonProperty("ddoc")

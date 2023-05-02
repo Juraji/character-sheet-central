@@ -1,4 +1,4 @@
-package nl.juraji.charactersheetscentral.couchcb.support
+package nl.juraji.charactersheetscentral.couchdb.documents
 
 import com.fasterxml.jackson.annotation.JsonProperty
 

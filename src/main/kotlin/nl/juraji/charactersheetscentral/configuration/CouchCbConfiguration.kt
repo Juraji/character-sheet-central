@@ -1,8 +1,8 @@
 package nl.juraji.charactersheetscentral.configuration
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import nl.juraji.charactersheetscentral.couchcb.support.CouchDbRestTemplateErrorHandler
-import nl.juraji.charactersheetscentral.couchcb.support.CouchDbRestTemplateNotFoundInterceptor
+import nl.juraji.charactersheetscentral.couchdb.support.CouchDbRestTemplateErrorHandler
+import nl.juraji.charactersheetscentral.couchdb.support.CouchDbRestTemplateNotFoundInterceptor
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean

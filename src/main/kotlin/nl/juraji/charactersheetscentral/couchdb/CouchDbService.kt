@@ -1,8 +1,14 @@
-package nl.juraji.charactersheetscentral.couchcb
+package nl.juraji.charactersheetscentral.couchdb
 
-import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
-import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
-import nl.juraji.charactersheetscentral.couchcb.support.*
+import nl.juraji.charactersheetscentral.couchdb.documents.*
+import nl.juraji.charactersheetscentral.couchdb.find.FindResult
+import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
+import nl.juraji.charactersheetscentral.couchdb.indexes.IndexOpResult
+import nl.juraji.charactersheetscentral.couchdb.support.*
+import nl.juraji.charactersheetscentral.couchdb.users.DbUserDocument
+import nl.juraji.charactersheetscentral.couchdb.users.SetDatabaseUsersOp
+import nl.juraji.charactersheetscentral.couchdb.users.Users
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import nl.juraji.charactersheetscentral.util.l
 import org.springframework.beans.factory.annotation.Qualifier
@@ -19,8 +25,8 @@ class CouchDbService(
     @Qualifier("couchDbRestTemplate") protected val restTemplate: RestTemplate,
     private val messageSource: MessageSource
 ) {
-    private val genericTypeRef: ParameterizedTypeReference<ApiFindResult<CentralDocumentMetaData>>
-        get() = object : ParameterizedTypeReference<ApiFindResult<CentralDocumentMetaData>>() {}
+    private val genericTypeRef: ParameterizedTypeReference<FindResult<CentralDocumentMetaData>>
+        get() = object : ParameterizedTypeReference<FindResult<CentralDocumentMetaData>>() {}
 
     // Documents
     fun <T : CentralDocument> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
@@ -28,23 +34,23 @@ class CouchDbService(
 
     fun <T : CentralDocument> findOneDocumentBySelector(
         databaseName: String,
-        query: DocumentSelector<T>,
-        typeReference: ParameterizedTypeReference<ApiFindResult<T>>
+        query: Selector<T>,
+        typeReference: ParameterizedTypeReference<FindResult<T>>
     ): T? = findDocumentBySelector(databaseName, query.singleResult(), typeReference).firstOrNull()
 
-    fun documentExistsBySelector(databaseName: String, query: DocumentSelector<*>): Boolean {
+    fun documentExistsBySelector(databaseName: String, query: Selector<*>): Boolean {
         // This is a hack, as the input query type will never match the generic type reference used for deserialization.
         // But this does not matter, as we never actually need the list contents, just whether it has content or not.
         @Suppress("UNCHECKED_CAST")
-        query as DocumentSelector<CentralDocumentMetaData>
+        query as Selector<CentralDocumentMetaData>
         // Selects the minimal fields required to optimize query
         return findDocumentBySelector(databaseName, query.withFields().singleResult(), genericTypeRef).isNotEmpty()
     }
 
     fun <T : CentralDocument> findDocumentBySelector(
         databaseName: String,
-        query: DocumentSelector<T>,
-        typeReference: ParameterizedTypeReference<ApiFindResult<T>>
+        query: Selector<T>,
+        typeReference: ParameterizedTypeReference<FindResult<T>>
     ): List<T> {
         val uri = "/$databaseName/_find"
         val request = HttpEntity(query)
@@ -58,27 +64,27 @@ class CouchDbService(
     fun <T : CentralDocument> saveDocument(
         databaseName: String,
         document: T,
-        action: SaveAction = SaveAction.AUTO
-    ): ApiDocumentOperationResult {
+        action: SaveType = SaveType.AUTO
+    ): DocumentOpResult {
         val (id, rev) = document
 
         return when (action) {
-            SaveAction.AUTO ->
+            SaveType.AUTO ->
                 if (id == null) createDocument(databaseName, document)
                 else updateDocument(databaseName, id, rev, document)
 
-            SaveAction.CREATE -> createDocument(databaseName, document)
-            SaveAction.UPDATE -> updateDocument(databaseName, id, rev, document)
+            SaveType.CREATE -> createDocument(databaseName, document)
+            SaveType.UPDATE -> updateDocument(databaseName, id, rev, document)
         }
     }
 
-    private fun <T : CentralDocument> createDocument(databaseName: String, document: T): ApiDocumentOperationResult {
+    private fun <T : CentralDocument> createDocument(databaseName: String, document: T): DocumentOpResult {
         val newDocId = document.id ?: UUID.randomUUID().toString()
         val uri = "/$databaseName/$newDocId"
         val request = HttpEntity(document)
 
         return restTemplate
-            .exchange(uri, HttpMethod.PUT, request, ApiDocumentOperationResult::class.java)
+            .exchange(uri, HttpMethod.PUT, request, DocumentOpResult::class.java)
             .orThrowNotFound(databaseName, "[NEW]")
     }
 
@@ -87,7 +93,7 @@ class CouchDbService(
         documentId: String?,
         documentRev: String?,
         document: T
-    ): ApiDocumentOperationResult {
+    ): DocumentOpResult {
         assertNotNull(documentId) { messageSource.l("couchDbService.assertions.existingDocIdMissing") }
         assertNotNull(documentRev) { messageSource.l("couchDbService.assertions.existingDocRevMissing") }
 
@@ -98,7 +104,7 @@ class CouchDbService(
         val request = HttpEntity(document, headers)
 
         return restTemplate
-            .exchange(uri, HttpMethod.PUT, request, ApiDocumentOperationResult::class.java)
+            .exchange(uri, HttpMethod.PUT, request, DocumentOpResult::class.java)
             .orThrowNotFound(databaseName, documentId)
     }
 
@@ -118,18 +124,18 @@ class CouchDbService(
         }
         val request = HttpEntity(null, headers)
 
-        restTemplate.exchange(uri, HttpMethod.DELETE, request, ApiDocumentOperationResult::class.java)
+        restTemplate.exchange(uri, HttpMethod.DELETE, request, DocumentOpResult::class.java)
     }
 
     // Database meta data
     fun createDatabase(databaseName: String) {
         val uri = "/$databaseName"
-        restTemplate.exchange(uri, HttpMethod.PUT, null, ApiOperationError::class.java)
+        restTemplate.exchange(uri, HttpMethod.PUT, null, CouchOperationError::class.java)
     }
 
     fun deleteDatabase(databaseName: String) {
         val uri = "/$databaseName"
-        restTemplate.exchange(uri, HttpMethod.DELETE, null, ApiOperationError::class.java)
+        restTemplate.exchange(uri, HttpMethod.DELETE, null, CouchOperationError::class.java)
     }
 
     fun setDatabaseUsers(
@@ -138,22 +144,22 @@ class CouchDbService(
         members: Set<String> = emptySet(),
     ) {
         val uri = "/$databaseName/_security"
-        val op = SetDatabaseUsersOperation(
-            admins = DatabaseUsers(admins),
-            members = DatabaseUsers(members)
+        val op = SetDatabaseUsersOp(
+            admins = Users(admins),
+            members = Users(members)
         )
 
         restTemplate.put(uri, op)
     }
 
-    fun findUser(username: String): CouchDbUserDocument? =
-        findDocumentById("_users", "org.couchdb.user:$username", CouchDbUserDocument::class)
+    fun findUser(username: String): DbUserDocument? =
+        findDocumentById("_users", "org.couchdb.user:$username", DbUserDocument::class)
 
     fun addUser(
         username: String,
         password: String = "NOOP_PW-${UUID.randomUUID()}"
-    ): ApiDocumentOperationResult {
-        val doc = CouchDbUserDocument(
+    ): DocumentOpResult {
+        val doc = DbUserDocument(
             id = "org.couchdb.user:$username",
             name = username,
             password = password
@@ -165,7 +171,7 @@ class CouchDbService(
     fun setMemberUserPassword(
         username: String,
         password: String
-    ): ApiDocumentOperationResult = findUser(username)
+    ): DocumentOpResult = findUser(username)
         .orThrowNotFound("_users", username)
         .run { copy(password = password) }
         .let { updateDocument("_users", it.id, it.rev, it) }
@@ -177,10 +183,10 @@ class CouchDbService(
     // Indexes
     fun createIndex(
         databaseName: String,
-        createIndexOperation: CreateIndexOperation,
+        createIndexOp: CreateIndexOp,
     ) {
         val uri = "/$databaseName/_index"
-        restTemplate.postForEntity(uri, createIndexOperation, ApiIndexOperationResult::class.java)
+        restTemplate.postForEntity(uri, createIndexOp, IndexOpResult::class.java)
     }
 
     protected fun <R, E : ResponseEntity<R>> E.orThrowNotFound(databaseName: String, forDocumentId: String?): R =

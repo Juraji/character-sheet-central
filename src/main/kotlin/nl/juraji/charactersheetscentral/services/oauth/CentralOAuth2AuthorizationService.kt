@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
-import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
-import nl.juraji.charactersheetscentral.couchcb.CouchDbService
-import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
-import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
-import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
-import nl.juraji.charactersheetscentral.couchcb.support.Index
-import nl.juraji.charactersheetscentral.couchcb.support.SaveAction
+import nl.juraji.charactersheetscentral.couchdb.CouchDbService
+import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
+import nl.juraji.charactersheetscentral.couchdb.documents.SaveType
+import nl.juraji.charactersheetscentral.couchdb.find.FindResult
+import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
+import nl.juraji.charactersheetscentral.couchdb.indexes.Index
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
@@ -38,14 +38,14 @@ class CentralOAuth2AuthorizationService(
     private val objectMapperBuilder: Jackson2ObjectMapperBuilder,
     configuration: CentralConfiguration,
     couchDb: CouchDbService,
-) : CouchDbDocumentRepository<CentralOAuthAuthorization>(couchDb), OAuth2AuthorizationService {
+) : DocumentRepository<CentralOAuthAuthorization>(couchDb), OAuth2AuthorizationService {
 
     override val databaseName: String = configuration.rootDbName
 
     override val documentClass: KClass<CentralOAuthAuthorization> = CentralOAuthAuthorization::class
 
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>>
-        get() = object : ParameterizedTypeReference<ApiFindResult<CentralOAuthAuthorization>>() {}
+    override val documentFindTypeRef: ParameterizedTypeReference<FindResult<CentralOAuthAuthorization>>
+        get() = object : ParameterizedTypeReference<FindResult<CentralOAuthAuthorization>>() {}
 
     private val authorizationObjectMapper: ObjectMapper by lazy {
         objectMapperBuilder
@@ -64,24 +64,24 @@ class CentralOAuth2AuthorizationService(
         findDocumentById(id)?.toOAuth2Authorization()
 
     override fun findByToken(token: String, tokenType: OAuth2TokenType?): OAuth2Authorization? {
-        val query: DocumentSelector<CentralOAuthAuthorization> = when (tokenType?.value) {
-            OAuth2ParameterNames.STATE -> DocumentSelector
+        val query: Selector<CentralOAuthAuthorization> = when (tokenType?.value) {
+            OAuth2ParameterNames.STATE -> Selector
                 .select<CentralOAuthAuthorization>("state" to token)
                 .withIndex(IDX_STATE)
 
-            OAuth2ParameterNames.CODE -> DocumentSelector
+            OAuth2ParameterNames.CODE -> Selector
                 .select<CentralOAuthAuthorization>("authorizationCode" to token)
                 .withIndex(IDX_AUTHORIZATION_CODE)
 
-            OAuth2ParameterNames.ACCESS_TOKEN -> DocumentSelector
+            OAuth2ParameterNames.ACCESS_TOKEN -> Selector
                 .select<CentralOAuthAuthorization>("accessToken" to token)
                 .withIndex(IDX_ACCESS_TOKEN)
 
-            OAuth2ParameterNames.REFRESH_TOKEN -> DocumentSelector
+            OAuth2ParameterNames.REFRESH_TOKEN -> Selector
                 .select<CentralOAuthAuthorization>("refreshToken" to token)
                 .withIndex(IDX_REFRESH_TOKEN)
 
-            else -> DocumentSelector
+            else -> Selector
                 .select<CentralOAuthAuthorization>(
                     "state" to token,
                     "authorizationCode" to token,
@@ -158,8 +158,8 @@ class CentralOAuth2AuthorizationService(
         }
 
         when (existing) {
-            null -> saveDocument(update, SaveAction.CREATE)
-            else -> saveDocument(update, SaveAction.UPDATE)
+            null -> saveDocument(update, SaveType.CREATE)
+            else -> saveDocument(update, SaveType.UPDATE)
         }
 
     }
@@ -168,12 +168,12 @@ class CentralOAuth2AuthorizationService(
         findDocumentById(authorization.id)?.let(::deleteDocument)
     }
 
-    override fun defineIndexes(): List<CreateIndexOperation> {
-        val selector = DocumentSelector.partialFilterSelector(CentralOAuthAuthorization::class)
-        fun selectNonNull(field: String): Pair<String, Any> = field to mapOf(DocumentSelector.Match.TYPE to "string")
+    override fun defineIndexes(): List<CreateIndexOp> {
+        val selector = Selector.partialFilterSelector(CentralOAuthAuthorization::class)
+        fun selectNonNull(field: String): Pair<String, Any> = field to mapOf(Selector.Match.TYPE to "string")
 
         return listOf(
-            CreateIndexOperation(
+            CreateIndexOp(
                 name = IDX_STATE,
                 index = Index(
                     fields = setOf("state"),
@@ -181,7 +181,7 @@ class CentralOAuth2AuthorizationService(
                         .appendSelectors(selectNonNull("state"))
                 )
             ),
-            CreateIndexOperation(
+            CreateIndexOp(
                 name = IDX_AUTHORIZATION_CODE,
                 index = Index(
                     fields = setOf("authorizationCode"),
@@ -189,7 +189,7 @@ class CentralOAuth2AuthorizationService(
                         .appendSelectors(selectNonNull("authorizationCode"))
                 )
             ),
-            CreateIndexOperation(
+            CreateIndexOp(
                 name = IDX_ACCESS_TOKEN,
                 index = Index(
                     fields = setOf("accessToken"),
@@ -197,7 +197,7 @@ class CentralOAuth2AuthorizationService(
                         .appendSelectors(selectNonNull("accessToken"))
                 )
             ),
-            CreateIndexOperation(
+            CreateIndexOp(
                 name = IDX_REFRESH_TOKEN,
                 index = Index(
                     fields = setOf("refreshToken"),
@@ -205,7 +205,7 @@ class CentralOAuth2AuthorizationService(
                         .appendSelectors(selectNonNull("refreshToken"))
                 )
             ),
-            CreateIndexOperation(
+            CreateIndexOp(
                 name = IDX_ALL_TOKENS,
                 index = Index(
                     fields = setOf("state", "authorizationCode", "accessToken", "refreshToken"),

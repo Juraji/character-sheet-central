@@ -1,12 +1,12 @@
 package nl.juraji.charactersheetscentral.services.users
 
 import nl.juraji.charactersheetscentral.configuration.CentralConfiguration
-import nl.juraji.charactersheetscentral.couchcb.CouchDbDocumentRepository
-import nl.juraji.charactersheetscentral.couchcb.CouchDbService
-import nl.juraji.charactersheetscentral.couchcb.find.ApiFindResult
-import nl.juraji.charactersheetscentral.couchcb.find.DocumentSelector
-import nl.juraji.charactersheetscentral.couchcb.support.CreateIndexOperation
-import nl.juraji.charactersheetscentral.couchcb.support.Index
+import nl.juraji.charactersheetscentral.couchdb.CouchDbService
+import nl.juraji.charactersheetscentral.couchdb.DocumentRepository
+import nl.juraji.charactersheetscentral.couchdb.find.FindResult
+import nl.juraji.charactersheetscentral.couchdb.find.Selector
+import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
+import nl.juraji.charactersheetscentral.couchdb.indexes.Index
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Repository
 import java.security.SecureRandom
@@ -18,18 +18,18 @@ import kotlin.streams.asSequence
 class CentralRegistrationCodeService(
     configuration: CentralConfiguration,
     couchDb: CouchDbService,
-) : CouchDbDocumentRepository<CentralRegistrationCode>(couchDb) {
+) : DocumentRepository<CentralRegistrationCode>(couchDb) {
     override val databaseName: String = configuration.rootDbName
     override val documentClass: KClass<CentralRegistrationCode> = CentralRegistrationCode::class
-    override val documentFindTypeRef: ParameterizedTypeReference<ApiFindResult<CentralRegistrationCode>>
-        get() = object : ParameterizedTypeReference<ApiFindResult<CentralRegistrationCode>>() {}
+    override val documentFindTypeRef: ParameterizedTypeReference<FindResult<CentralRegistrationCode>>
+        get() = object : ParameterizedTypeReference<FindResult<CentralRegistrationCode>>() {}
 
     fun findRegistrationCode(code: String): CentralRegistrationCode? {
         val nowMillis = Instant.now().toEpochMilli()
-        val selector = DocumentSelector
+        val selector = Selector
             .select<CentralRegistrationCode>(
                 "code" to code,
-                "expiresAt" to mapOf(DocumentSelector.Match.GT to nowMillis)
+                "expiresAt" to mapOf(Selector.Match.GT to nowMillis)
             )
             .withIndex(CODE_IDX)
 
@@ -59,12 +59,12 @@ class CentralRegistrationCodeService(
             .joinToString("-")
     }
 
-    override fun defineIndexes(): List<CreateIndexOperation> = listOf(
-        CreateIndexOperation(
+    override fun defineIndexes(): List<CreateIndexOp> = listOf(
+        CreateIndexOp(
             name = CODE_IDX,
             index = Index(
                 fields = setOf("code", "expiresAt"),
-                partialFilterSelector = DocumentSelector
+                partialFilterSelector = Selector
                     .partialFilterSelector(CentralRegistrationCode::class)
             )
         )

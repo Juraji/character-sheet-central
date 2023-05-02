@@ -1,4 +1,4 @@
-package nl.juraji.charactersheetscentral.couchcb
+package nl.juraji.charactersheetscentral.couchdb.support
 
 import org.springframework.http.HttpStatusCode
 

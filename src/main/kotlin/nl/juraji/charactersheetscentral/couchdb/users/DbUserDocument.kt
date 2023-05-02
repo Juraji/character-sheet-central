@@ -1,6 +1,8 @@
-package nl.juraji.charactersheetscentral.couchcb.support
+package nl.juraji.charactersheetscentral.couchdb.users
 
-data class CouchDbUserDocument(
+import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
+
+data class DbUserDocument(
     override val id: String? = null,
     override val rev: String? = null,
     val name: String,
