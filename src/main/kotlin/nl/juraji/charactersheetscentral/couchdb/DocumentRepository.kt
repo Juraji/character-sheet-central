@@ -17,26 +17,26 @@ abstract class DocumentRepository<T : CentralDocument>(
     abstract val documentClass: KClass<T>
     abstract val documentFindTypeRef: ParameterizedTypeReference<FindResult<T>>
 
-    fun findDocumentById(documentId: String): T? =
+    protected fun findDocumentById(documentId: String): T? =
         couchDb.findDocumentById(databaseName, documentId, documentClass)
 
-    fun findOneDocumentBySelector(query: FindQuery<T>): T? =
+    protected fun findOneDocumentBySelector(query: FindQuery<T>): T? =
         couchDb.findOneDocumentBySelector(databaseName, query.singleResult(), documentFindTypeRef)
 
-    fun documentExistsBySelector(query: FindQuery<T>): Boolean =
+    protected fun documentExistsBySelector(query: FindQuery<T>): Boolean =
         couchDb.documentExistsBySelector(databaseName, query)
 
-    fun findDocumentsBySelector(query: FindQuery<T>): List<T> =
+    protected fun findDocumentsBySelector(query: FindQuery<T>): List<T> =
         couchDb.findDocumentBySelector(databaseName, query, documentFindTypeRef)
 
-    fun saveDocument(document: T, action: SaveType = SaveType.AUTO): DocumentOpResult =
+    protected fun saveDocument(document: T, action: SaveType = SaveType.AUTO): DocumentOpResult =
         couchDb.saveDocument(databaseName, document, action)
 
-    fun deleteDocument(document: T) =
+    protected fun deleteDocument(document: T) =
         couchDb.deleteDocument(databaseName, document)
 
-    fun deleteDocument(documentId: String, documentRev: String) =
+    protected fun deleteDocument(documentId: String, documentRev: String) =
         couchDb.deleteDocument(databaseName, documentId, documentRev)
 
-    open fun defineIndexes(): List<CreateIndexOp> = emptyList()
+    protected open fun defineIndexes(): List<CreateIndexOp> = emptyList()
 }

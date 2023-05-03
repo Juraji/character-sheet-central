@@ -33,6 +33,8 @@ class CentralUserService(
     override val documentFindTypeRef: ParameterizedTypeReference<FindResult<CentralUser>>
         get() = restTemplateTypeRef<FindResult<CentralUser>>()
 
+    fun findAll(): List<CentralUser> = findDocumentsBySelector(queryModel())
+
     fun findByUsername(username: String): CentralUser =
         findOneDocumentBySelector(usernameSelector(username))
             ?: throw UsernameNotFoundException("User with name $username does not exist!")

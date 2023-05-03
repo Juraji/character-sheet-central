@@ -2,6 +2,7 @@
 
 package nl.juraji.charactersheetscentral.couchdb.find
 
+import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
 import nl.juraji.charactersheetscentral.couchdb.documents.CouchDbDocument
 
 /** Selector typing (Clean code) */
@@ -12,8 +13,11 @@ typealias SelectorPair = Pair<String, Any>
 /**
  * Convenience function to init a new [FindQuery].
  */
-inline fun <reified T : CouchDbDocument> query(vararg selector: SelectorPair): FindQuery<T> =
+fun <T : CouchDbDocument> query(vararg selector: SelectorPair): FindQuery<T> =
     FindQuery(selector.toMap())
+
+inline fun <reified T : CentralDocument> queryModel(vararg selector: SelectorPair): FindQuery<T> =
+    FindQuery(selector.toMap() + eq("modelType", T::class.simpleName!!))
 
 /** Query mutation */
 /**
