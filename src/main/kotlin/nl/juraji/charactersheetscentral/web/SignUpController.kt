@@ -56,7 +56,13 @@ class SignUpController(
         }
 
         // Everything seems to be in order, create user and delete registration code
-        userService.createUser(username, password, CentralUserRole.MEMBER, CentralUserRole.COUCH_DB_ACCESS)
+        userService.createUser(
+            username,
+            password,
+            CentralUserRole.MEMBER,
+            CentralUserRole.COUCH_DB_ACCESS,
+            CentralUserRole.USE_INBOXES
+        )
         registrationCodeService.deleteDocument(registrationCodeDoc)
 
         // Everything is ok!

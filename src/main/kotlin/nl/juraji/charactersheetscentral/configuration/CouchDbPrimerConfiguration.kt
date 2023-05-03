@@ -44,7 +44,8 @@ class CouchDbPrimerConfiguration(
                     config.adminUsername,
                     config.adminPassword,
                     CentralUserRole.ADMIN,
-                    CentralUserRole.COUCH_DB_ACCESS
+                    CentralUserRole.COUCH_DB_ACCESS,
+                    CentralUserRole.USE_INBOXES,
                 )
         }
     }
