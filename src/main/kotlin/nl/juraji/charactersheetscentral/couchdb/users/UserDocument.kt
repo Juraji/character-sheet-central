@@ -2,7 +2,7 @@ package nl.juraji.charactersheetscentral.couchdb.users
 
 import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
 
-data class DbUserDocument(
+data class UserDocument(
     override val id: String? = null,
     override val rev: String? = null,
     val name: String,

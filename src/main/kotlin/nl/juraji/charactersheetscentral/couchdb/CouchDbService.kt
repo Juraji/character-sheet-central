@@ -8,9 +8,8 @@ import nl.juraji.charactersheetscentral.couchdb.find.withFields
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import nl.juraji.charactersheetscentral.couchdb.indexes.IndexOpResult
 import nl.juraji.charactersheetscentral.couchdb.support.*
-import nl.juraji.charactersheetscentral.couchdb.users.DbUserDocument
-import nl.juraji.charactersheetscentral.couchdb.users.SetDatabaseUsersOp
-import nl.juraji.charactersheetscentral.couchdb.users.Users
+import nl.juraji.charactersheetscentral.couchdb.users.DatabaseMembersDocument
+import nl.juraji.charactersheetscentral.couchdb.users.UserDocument
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import nl.juraji.charactersheetscentral.util.jackson.restTemplateTypeRef
 import nl.juraji.charactersheetscentral.util.l
@@ -141,28 +140,29 @@ class CouchDbService(
         restTemplate.exchange(uri, HttpMethod.DELETE, null, CouchOperationError::class.java)
     }
 
-    fun setDatabaseUsers(
-        databaseName: String,
-        admins: Set<String> = emptySet(),
-        members: Set<String> = emptySet(),
-    ) {
+    fun getDatabaseUsers(databaseName: String): DatabaseMembersDocument {
         val uri = "/$databaseName/_security"
-        val op = SetDatabaseUsersOp(
-            admins = Users(admins),
-            members = Users(members)
-        )
-
-        restTemplate.put(uri, op)
+        return restTemplate
+            .getForObject(uri, DatabaseMembersDocument::class.java)
+            .orThrowNotFound(databaseName, "DatabaseMembersDocument")
     }
 
-    fun findUser(username: String): DbUserDocument? =
-        findDocumentById("_users", "org.couchdb.user:$username", DbUserDocument::class)
+    fun setDatabaseUsers(
+        databaseName: String,
+        membersDocument: DatabaseMembersDocument
+    ) {
+        val uri = "/$databaseName/_security"
+        restTemplate.put(uri, membersDocument)
+    }
+
+    fun findUser(username: String): UserDocument? =
+        findDocumentById("_users", "org.couchdb.user:$username", UserDocument::class)
 
     fun addUser(
         username: String,
         password: String = "NOOP_PW-${UUID.randomUUID()}"
     ): DocumentOpResult {
-        val doc = DbUserDocument(
+        val doc = UserDocument(
             id = "org.couchdb.user:$username",
             name = username,
             password = password

@@ -12,6 +12,7 @@ import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import nl.juraji.charactersheetscentral.couchdb.indexes.Index
 import nl.juraji.charactersheetscentral.couchdb.indexes.partialFilterSelector
 import nl.juraji.charactersheetscentral.services.oauth.support.CentralAuthorizationCreatedEvent
+import nl.juraji.charactersheetscentral.services.oauth.support.CentralAuthorizationInvalidatedEvent
 import nl.juraji.charactersheetscentral.services.oauth.support.CentralAuthorizationUpdatedEvent
 import nl.juraji.charactersheetscentral.util.assertNotNull
 import nl.juraji.charactersheetscentral.util.jackson.restTemplateTypeRef
@@ -25,6 +26,7 @@ import org.springframework.security.oauth2.core.OAuth2RefreshToken
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames
 import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization.Token.INVALIDATED_METADATA_NAME
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
@@ -156,17 +158,27 @@ class CentralOAuth2AuthorizationService(
             )
         }
 
-        if (existing == null) {
-            eventPublisher.publishEvent(CentralAuthorizationCreatedEvent(authorization))
-            saveDocument(update, SaveType.CREATE)
-        } else {
-            eventPublisher.publishEvent(CentralAuthorizationUpdatedEvent(authorization))
-            saveDocument(update, SaveType.UPDATE)
+        when {
+            existing == null -> {
+                eventPublisher.publishEvent(CentralAuthorizationCreatedEvent(authorization))
+                saveDocument(update, SaveType.CREATE)
+            }
+
+            authorization.accessToken != null && authorization.accessToken.metadata[INVALIDATED_METADATA_NAME] == true -> {
+                eventPublisher.publishEvent(CentralAuthorizationInvalidatedEvent(authorization))
+                saveDocument(update, SaveType.UPDATE)
+            }
+
+            else -> {
+                eventPublisher.publishEvent(CentralAuthorizationUpdatedEvent(authorization))
+                saveDocument(update, SaveType.UPDATE)
+            }
         }
     }
 
     override fun remove(authorization: OAuth2Authorization) {
         findDocumentById(authorization.id)?.let(::deleteDocument)
+        eventPublisher.publishEvent(CentralAuthorizationInvalidatedEvent(authorization))
     }
 
     override fun defineIndexes(): List<CreateIndexOp> {
