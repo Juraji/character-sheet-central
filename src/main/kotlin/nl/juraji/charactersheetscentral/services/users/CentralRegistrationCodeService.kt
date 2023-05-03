@@ -69,6 +69,8 @@ class CentralRegistrationCodeService(
         )
     )
 
+    fun delete(document: CentralRegistrationCode) = deleteDocument(document)
+
     companion object {
         const val CODE_CHAR_SRC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         const val CODE_CHUNK_SIZE = 4

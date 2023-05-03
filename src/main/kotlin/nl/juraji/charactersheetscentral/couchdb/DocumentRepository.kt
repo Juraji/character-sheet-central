@@ -38,5 +38,5 @@ abstract class DocumentRepository<T : CentralDocument>(
     protected fun deleteDocument(documentId: String, documentRev: String) =
         couchDb.deleteDocument(databaseName, documentId, documentRev)
 
-    protected open fun defineIndexes(): List<CreateIndexOp> = emptyList()
+    open fun defineIndexes(): List<CreateIndexOp> = emptyList()
 }

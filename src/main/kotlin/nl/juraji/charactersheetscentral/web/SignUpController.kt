@@ -63,7 +63,7 @@ class SignUpController(
             CentralUserRole.COUCH_DB_ACCESS,
             CentralUserRole.USE_INBOXES
         )
-        registrationCodeService.deleteDocument(registrationCodeDoc)
+        registrationCodeService.delete(registrationCodeDoc)
 
         // Everything is ok!
         return "redirect:login?signUpComplete&username=$username"
