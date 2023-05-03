@@ -32,10 +32,10 @@ class CouchDbService(
         get() = restTemplateTypeRef<FindResult<CentralDocumentMetaData>>()
 
     // Documents
-    fun <T : CentralDocument> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
+    fun <T : CouchDbDocument> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
         restTemplate.getForObject("/$databaseName/$documentId", documentClass.java)
 
-    fun <T : CentralDocument> findOneDocumentBySelector(
+    fun <T : CouchDbDocument> findOneDocumentBySelector(
         databaseName: String,
         query: FindQuery<T>,
         typeReference: ParameterizedTypeReference<FindResult<T>>
@@ -50,7 +50,7 @@ class CouchDbService(
         return findDocumentBySelector(databaseName, query.withFields().singleResult(), genericTypeRef).isNotEmpty()
     }
 
-    fun <T : CentralDocument> findDocumentBySelector(
+    fun <T : CouchDbDocument> findDocumentBySelector(
         databaseName: String,
         query: FindQuery<T>,
         typeReference: ParameterizedTypeReference<FindResult<T>>
@@ -64,7 +64,7 @@ class CouchDbService(
             ?: emptyList()
     }
 
-    fun <T : CentralDocument> saveDocument(
+    fun <T : CouchDbDocument> saveDocument(
         databaseName: String,
         document: T,
         action: SaveType = SaveType.AUTO
@@ -81,7 +81,7 @@ class CouchDbService(
         }
     }
 
-    private fun <T : CentralDocument> createDocument(databaseName: String, document: T): DocumentOpResult {
+    private fun <T : CouchDbDocument> createDocument(databaseName: String, document: T): DocumentOpResult {
         val newDocId = document.id ?: UUID.randomUUID().toString()
         val uri = "/$databaseName/$newDocId"
         val request = HttpEntity(document)
@@ -91,7 +91,7 @@ class CouchDbService(
             .orThrowNotFound(databaseName, "[NEW]")
     }
 
-    private fun <T : CentralDocument> updateDocument(
+    private fun <T : CouchDbDocument> updateDocument(
         databaseName: String,
         documentId: String?,
         documentRev: String?,
@@ -111,7 +111,7 @@ class CouchDbService(
             .orThrowNotFound(databaseName, documentId)
     }
 
-    fun deleteDocument(databaseName: String, document: DocumentIdMeta) {
+    fun deleteDocument(databaseName: String, document: CouchDbDocument) {
         val (id, rev) = document
 
         assertNotNull(id) { messageSource.l("couchDbService.assertions.deleteMissingId") }

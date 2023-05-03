@@ -2,7 +2,7 @@
 
 package nl.juraji.charactersheetscentral.couchdb.find
 
-import nl.juraji.charactersheetscentral.couchdb.documents.CentralDocument
+import nl.juraji.charactersheetscentral.couchdb.documents.CouchDbDocument
 
 /** Selector typing (Clean code) */
 typealias Selector = Map<String, Any>
@@ -12,14 +12,14 @@ typealias SelectorPair = Pair<String, Any>
 /**
  * Convenience function to init a new [FindQuery].
  */
-inline fun <reified T : CentralDocument> query(vararg selector: SelectorPair): FindQuery<T> =
-    FindQuery(mapOf("modelType" to T::class.simpleName!!, *selector))
+inline fun <reified T : CouchDbDocument> query(vararg selector: SelectorPair): FindQuery<T> =
+    FindQuery(selector.toMap())
 
 /** Query mutation */
 /**
  * Map selector to match at most a single document.
  */
-fun <T : CentralDocument> FindQuery<T>.singleResult(): FindQuery<T> =
+fun <T : CouchDbDocument> FindQuery<T>.singleResult(): FindQuery<T> =
     this.copy(limit = 1, skip = 0)
 
 /**
@@ -27,7 +27,7 @@ fun <T : CentralDocument> FindQuery<T>.singleResult(): FindQuery<T> =
  * Note: If [includeSelected] is true (default), the root fields in the selector are also included in the fields
  * to make it so CouchDB can use the most appropriate index.
  */
-fun <T : CentralDocument> FindQuery<T>.withFields(
+fun <T : CouchDbDocument> FindQuery<T>.withFields(
     vararg fields: String,
     includeSelected: Boolean = true
 ): FindQuery<T> {
@@ -39,13 +39,13 @@ fun <T : CentralDocument> FindQuery<T>.withFields(
  * Use a specific index for this query.
  * The [index] can be the name of a design document or index name
  */
-fun <T : CentralDocument> FindQuery<T>.usingIndex(vararg index: String): FindQuery<T> =
+fun <T : CouchDbDocument> FindQuery<T>.usingIndex(vararg index: String): FindQuery<T> =
     this.copy(useIndex = index.toSet())
 
 /**
  * Append/merge field selectors to this instanceMa
  */
-fun <T : CentralDocument> FindQuery<T>.appendSelectors(vararg selector: SelectorPair): FindQuery<T> =
+fun <T : CouchDbDocument> FindQuery<T>.appendSelectors(vararg selector: SelectorPair): FindQuery<T> =
     this.copy(selector = this.selector + selector.toMap())
 
 /** Builders */

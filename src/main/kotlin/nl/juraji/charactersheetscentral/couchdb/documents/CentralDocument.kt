@@ -2,7 +2,7 @@ package nl.juraji.charactersheetscentral.couchdb.documents
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-interface DocumentIdMeta {
+interface CouchDbDocument {
     @get:JsonProperty("_id")
     val id: String?
 
@@ -14,7 +14,7 @@ interface DocumentIdMeta {
     operator fun component2(): String? // rev
 }
 
-interface CentralDocument : DocumentIdMeta {
+interface CentralDocument : CouchDbDocument {
     val modelType: String get() = this::class.simpleName!!
 }
 
