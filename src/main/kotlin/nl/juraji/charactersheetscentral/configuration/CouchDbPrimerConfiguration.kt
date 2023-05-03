@@ -33,6 +33,7 @@ class CouchDbPrimerConfiguration(
 
         documentRepositories
             .flatMap(DocumentRepository<*>::defineIndexes)
+            .map { it.copy(designDocumentName = config.indexDesignDocument) }
             .forEach { couchDb.createIndex(databaseName, it) }
     }
 

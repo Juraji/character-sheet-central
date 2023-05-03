@@ -8,4 +8,5 @@ data class CentralConfiguration(
     val userDbPrefix: String,
     val adminUsername: String,
     val adminPassword: String,
+    val indexDesignDocument: String,
 )
