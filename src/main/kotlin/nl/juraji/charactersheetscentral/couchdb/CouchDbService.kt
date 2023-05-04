@@ -16,6 +16,7 @@ import nl.juraji.charactersheetscentral.util.l
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.MessageSource
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.core.io.Resource
 import org.springframework.http.*
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
@@ -33,6 +34,9 @@ class CouchDbService(
     // Documents
     fun <T : CouchDbDocument> findDocumentById(databaseName: String, documentId: String, documentClass: KClass<T>): T? =
         restTemplate.getForObject("/$databaseName/$documentId", documentClass.java)
+
+    fun findRawDocumentById(databaseName: String, documentId: String): String? =
+        restTemplate.getForObject("/$databaseName/$documentId", String::class.java)
 
     fun <T : CouchDbDocument> findOneDocumentBySelector(
         databaseName: String,
@@ -129,6 +133,42 @@ class CouchDbService(
         restTemplate.exchange(uri, HttpMethod.DELETE, request, DocumentOpResult::class.java)
     }
 
+    // Attachments
+    fun getDocumentAttachment(
+        databaseName: String,
+        documentId: String,
+        documentRev: String,
+        attachmentName: String
+    ): Resource {
+        val uri = "/$databaseName/$documentId/$attachmentName"
+        val headers = HttpHeaders().apply {
+            set(HttpHeaders.IF_MATCH, documentRev)
+        }
+        val request = HttpEntity(null, headers)
+
+        return restTemplate
+            .exchange(uri, HttpMethod.GET, request, Resource::class.java)
+            .orThrowNotFound(databaseName, attachmentName)
+    }
+
+    fun addDocumentAttachment(
+        databaseName: String,
+        documentId: String,
+        documentRev: String,
+        attachmentName: String,
+        resource: Resource
+    ): DocumentOpResult {
+        val uri = "/$databaseName/$documentId/$attachmentName"
+        val headers = HttpHeaders().apply {
+            set(HttpHeaders.IF_MATCH, documentRev)
+        }
+        val request = HttpEntity(resource, headers)
+
+        return restTemplate
+            .exchange(uri, HttpMethod.PUT, request, DocumentOpResult::class.java)
+            .orThrowNotFound(databaseName, documentId)
+    }
+
     // Database meta data
     fun createDatabase(databaseName: String) {
         val uri = "/$databaseName"
@@ -144,7 +184,7 @@ class CouchDbService(
         val uri = "/$databaseName/_security"
         return restTemplate
             .getForObject(uri, DatabaseMembersDocument::class.java)
-            .orThrowNotFound(databaseName, "DatabaseMembersDocument")
+            ?: throwNotFound(databaseName, "DatabaseMembersDocument")
     }
 
     fun setDatabaseUsers(
@@ -175,9 +215,9 @@ class CouchDbService(
         username: String,
         password: String
     ): DocumentOpResult = findUser(username)
-        .orThrowNotFound("_users", username)
-        .run { copy(password = password) }
-        .let { updateDocument("_users", it.id, it.rev, it) }
+        ?.run { copy(password = password) }
+        ?.let { updateDocument("_users", it.id, it.rev, it) }
+        ?: throwNotFound("_users", username)
 
     fun removeUser(username: String) =
         findUser(username)?.let { deleteDocument("_users", it) }
@@ -192,14 +232,12 @@ class CouchDbService(
         restTemplate.postForEntity(uri, createIndexOp, IndexOpResult::class.java)
     }
 
-    protected fun <R, E : ResponseEntity<R>> E.orThrowNotFound(databaseName: String, forDocumentId: String?): R =
-        body.orThrowNotFound(databaseName, forDocumentId)
-
-    protected fun <R : Any> R?.orThrowNotFound(databaseName: String, forDocumentId: String?): R = this ?: messageSource
-        // @formatter:off
-        .l("couchDbApi.responses.notFound", databaseName, forDocumentId ?: "[UNKNOWN ID]")
+    private fun throwNotFound(databaseName: String, subject: String?): Nothing = messageSource
+        .l("couchDbApi.responses.notFound", databaseName, subject ?: "[UNKNOWN ID]")
         .run { throw CouchDbApiException(HttpStatus.NOT_FOUND, this) }
-        // @formatter:on
+
+    protected fun <R, E : ResponseEntity<R>> E.orThrowNotFound(databaseName: String, subject: String?): R =
+        body ?: throwNotFound(databaseName, subject)
 
 }
 

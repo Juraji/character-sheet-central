@@ -66,7 +66,7 @@ class UserCouchDbMgmtListener(
      */
     private fun userNotHasCouchDbSyncAccess(scopes: Set<String>, authorities: List<String>): Boolean {
         return !scopes.contains(CentralScopes.COUCHDB_SYNC)
-                || !authorities.contains("ROLE_${CentralUserRole.COUCH_DB_ACCESS}")
+                || !authorities.contains(CentralUserRole.authorityOf { COUCH_DB_ACCESS })
     }
 
     @Suppress("UNCHECKED_CAST")

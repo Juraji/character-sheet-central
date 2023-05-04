@@ -9,4 +9,6 @@ data class CentralConfiguration(
     val adminUsername: String,
     val adminPassword: String,
     val indexDesignDocument: String,
-)
+) {
+    fun userDbName(username: String): String  = userDbPrefix + username
+}

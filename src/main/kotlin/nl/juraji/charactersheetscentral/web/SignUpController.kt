@@ -61,7 +61,7 @@ class SignUpController(
             password,
             CentralUserRole.MEMBER,
             CentralUserRole.COUCH_DB_ACCESS,
-            CentralUserRole.USE_INBOXES
+            CentralUserRole.INBOXES_SEND
         )
         registrationCodeService.delete(registrationCodeDoc)
 

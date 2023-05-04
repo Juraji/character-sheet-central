@@ -33,7 +33,11 @@ class CentralUserService(
     override val documentFindTypeRef: ParameterizedTypeReference<FindResult<CentralUser>>
         get() = restTemplateTypeRef<FindResult<CentralUser>>()
 
-    fun findAll(): List<CentralUser> = findDocumentsBySelector(queryModel())
+    fun findByRoleOrAuthority(roleOrAuthority: String): List<CentralUser> {
+        val authority = CentralUserRole.authorityOf(roleOrAuthority)
+        return findDocumentsBySelector(query(eq("authorities", elemMatch(eq(authority)))))
+    }
+
 
     fun findByUsername(username: String): CentralUser =
         findOneDocumentBySelector(usernameSelector(username))
@@ -62,7 +66,7 @@ class CentralUserService(
             .build()
             .let(::createUser)
 
-        couchDb.createDatabase(configuration.userDbPrefix + username)
+        couchDb.createDatabase(configuration.userDbName(username))
     }
 
     override fun createUser(user: UserDetails) {
@@ -97,6 +101,7 @@ class CentralUserService(
 
     override fun deleteUser(username: String) {
         findByUsername(username).let(::deleteDocument)
+        couchDb.deleteDatabase(configuration.userDbName(username))
     }
 
     /**

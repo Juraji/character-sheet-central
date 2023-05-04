@@ -16,7 +16,7 @@ typealias SelectorPair = Pair<String, Any>
 fun <T : CouchDbDocument> query(vararg selector: SelectorPair): FindQuery<T> =
     FindQuery(selector.toMap())
 
-inline fun <reified T : CentralDocument> queryModel(vararg selector: SelectorPair): FindQuery<T> =
+inline fun <reified T : CentralDocument> modelQuery(vararg selector: SelectorPair): FindQuery<T> =
     FindQuery(selector.toMap() + eq("modelType", T::class.simpleName!!))
 
 /** Query mutation */
@@ -54,6 +54,7 @@ fun <T : CouchDbDocument> FindQuery<T>.appendSelectors(vararg selector: Selector
 
 /** Builders */
 fun eq(key: String, value: Any): SelectorPair = key to value
+fun <E : Enum<E>> eq(key: String, value: E): SelectorPair = key to value.name
 fun eq(key: String, selector: Selector): SelectorPair = key to selector
 
 /** Combination operators */
