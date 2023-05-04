@@ -16,20 +16,28 @@ abstract class DocumentRepository<T : CentralDocument>(
     abstract val databaseName: String
     abstract val documentClass: KClass<T>
     abstract val documentFindTypeRef: ParameterizedTypeReference<FindResult<T>>
+    val modelTypeSelector get() = eq("modelType", documentClass.simpleName!!)
 
     fun findDocumentById(documentId: String): T? =
         couchDb.findDocumentById(databaseName, documentId, documentClass)
 
     fun findOneDocumentBySelector(query: FindQuery<T>): T? =
-        couchDb.findOneDocumentBySelector(databaseName, query.singleResult(), documentFindTypeRef)
+        couchDb.findOneDocumentBySelector(
+            databaseName,
+            query.appendSelectors(modelTypeSelector).singleResult(),
+            documentFindTypeRef
+        )
 
     fun documentExistsBySelector(query: FindQuery<T>): Boolean =
-        couchDb.documentExistsBySelector(databaseName, query)
+        couchDb.documentExistsBySelector(
+            databaseName,
+            query.appendSelectors(modelTypeSelector)
+        )
 
     fun findDocumentsBySelector(query: FindQuery<T>): List<T> =
         couchDb.findDocumentBySelector(
             databaseName,
-            query.appendSelectors(eq("modelType", documentClass.simpleName!!)),
+            query.appendSelectors(modelTypeSelector),
             documentFindTypeRef
         )
 
@@ -42,5 +50,5 @@ abstract class DocumentRepository<T : CentralDocument>(
     fun deleteDocument(documentId: String, documentRev: String) =
         couchDb.deleteDocument(databaseName, documentId, documentRev)
 
-    open fun defineIndexes(): List<CreateIndexOp> = emptyList()
+    fun defineIndexes(): List<CreateIndexOp> = emptyList()
 }
