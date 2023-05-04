@@ -75,7 +75,7 @@ class CentralUserService(
         user
             .run {
                 CentralUser(
-                    username = username.lowercase(),
+                    username = username,
                     password = password,
                     enabled = isEnabled,
                     accountNonExpired = isAccountNonExpired,
@@ -133,7 +133,7 @@ class CentralUserService(
     )
 
     private fun usernameSelector(username: String): FindQuery<CentralUser> =
-        query<CentralUser>(eq("username", username.lowercase())).usingIndex(USERNAME_IDX)
+        query<CentralUser>(eq("username", username)).usingIndex(USERNAME_IDX)
 
     companion object {
         const val USERNAME_IDX = "idx__centralUser__username"

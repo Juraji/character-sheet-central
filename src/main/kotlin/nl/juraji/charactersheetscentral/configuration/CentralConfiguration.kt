@@ -10,5 +10,5 @@ data class CentralConfiguration(
     val adminPassword: String,
     val indexDesignDocument: String,
 ) {
-    fun userDbName(username: String): String  = userDbPrefix + username
+    fun userDbName(username: String): String  = userDbPrefix + username.lowercase()
 }

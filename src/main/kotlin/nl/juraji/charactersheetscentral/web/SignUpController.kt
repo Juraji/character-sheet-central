@@ -32,7 +32,6 @@ class SignUpController(
         @RequestParam password: String,
         @RequestParam passwordRepeat: String,
     ): String {
-        val fieldErrors: MutableList<String> = mutableListOf()
         model["registrationCodeFieldError"] = false
         model["usernameFieldError"] = false
         model["passwordFieldError"] = false
@@ -57,16 +56,23 @@ class SignUpController(
         }
 
         // Everything seems to be in order, create user and delete registration code
-        userService.createUser(
-            username,
-            password,
-            CentralUserRole.MEMBER,
-            CentralUserRole.COUCH_DB_ACCESS,
-            CentralUserRole.INBOXES_SEND
-        )
-        registrationCodeService.delete(registrationCodeDoc)
+        val userResult = userService
+            .runCatching {
+                createUser(
+                    username,
+                    password,
+                    CentralUserRole.MEMBER,
+                    CentralUserRole.COUCH_DB_ACCESS,
+                    CentralUserRole.INBOXES_SEND
+                )
+            }
+            .onSuccess { registrationCodeService.delete(registrationCodeDoc) }
 
-        // Everything is ok!
-        return "redirect:login?signUpComplete&username=$username"
+        return if (userResult.isSuccess) {
+            "redirect:login?signUpComplete&username=$username"
+        } else {
+            model["usernameFieldError"] = true
+            "signup"
+        }
     }
 }
