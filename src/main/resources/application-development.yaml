@@ -1,7 +1,3 @@
-spring:
-  mvc:
-    log-request-details: true
-
 cs-central:
   admin-username: "admin"
   admin-password: "admin"

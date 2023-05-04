@@ -1,16 +1,20 @@
 package nl.juraji.charactersheetscentral.configuration
 
-import nl.juraji.charactersheetscentral.util.auth.NoopPasswordEncoder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.core.session.SessionRegistryImpl
-import org.springframework.security.crypto.factory.PasswordEncoderFactories
-import org.springframework.security.crypto.password.DelegatingPasswordEncoder
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.session.HttpSessionEventPublisher
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import java.security.SecureRandom
+
 
 @Configuration
 class ApiSecurityConfiguration {
@@ -42,17 +46,27 @@ class ApiSecurityConfiguration {
     }
 
     @Bean
+    fun corsConfigurationSource(
+        clients: RegisteredClientRepository
+    ): CorsConfigurationSource {
+        val config = CorsConfiguration()
+        config.addAllowedOrigin("http://localhost:8080")
+
+
+        config.addAllowedHeader("*")
+        config.addAllowedMethod("*")
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/oauth2/**", config)
+        return source
+    }
+
+    @Bean
     fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
 
     @Bean
     fun httpSessionEventPublisher(): HttpSessionEventPublisher = HttpSessionEventPublisher()
 
     @Bean
-    fun passwordEncoder(): PasswordEncoder =
-        (PasswordEncoderFactories.createDelegatingPasswordEncoder() as DelegatingPasswordEncoder).apply {
-            // Override the default encoder (which throws an error on use) with a simple input equals implementation.
-            // This is needed because Spring OAuth Server picks up on this bean while it should not.
-            setDefaultPasswordEncoderForMatches(NoopPasswordEncoder())
-        }
+    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder(-1, SecureRandom())
 
 }
