@@ -31,7 +31,7 @@ class InboxesService(
     private val executorService = Executors.newSingleThreadExecutor()
     private val outboxTypeRef get() = restTemplateTypeRef<FindResult<OutboxMessage>>()
 
-    @Scheduled(fixedRate = 30, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRate = 5, timeUnit = TimeUnit.MINUTES)
     fun runInboxes() {
         logger.debug("Running inboxes...")
         centralUserService

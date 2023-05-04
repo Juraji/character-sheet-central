@@ -15,5 +15,8 @@ object CentralUserRole {
 
     fun authorityOf(role: String): String = authorityOf { role }
     fun authorityOf(block: CentralUserRole.() -> String): String =
-        block.invoke(this).commonPrefixWith(AUTHORITY_PREFIX)
+        block.invoke(this).let {
+            if (it.startsWith(AUTHORITY_PREFIX)) it
+            else AUTHORITY_PREFIX + it
+        }
 }
