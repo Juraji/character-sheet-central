@@ -33,6 +33,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-quartz")
     implementation("org.springframework.security:spring-security-oauth2-authorization-server:1.0.2")
+    implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6:3.1.1.RELEASE")
+    implementation("org.thymeleaf.extras:thymeleaf-extras-java8time:3.0.4.RELEASE")
 
     // Test Dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")

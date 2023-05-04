@@ -35,7 +35,7 @@ class ApiSecurityConfiguration {
                 form
                     .loginPage("/login")
                     .loginProcessingUrl("/login")
-                    .defaultSuccessUrl("/user/home")
+                    .defaultSuccessUrl("/members")
             }
             .logout { it.permitAll() }
         return http.build()

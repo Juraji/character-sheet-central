@@ -33,25 +33,26 @@ class SignUpController(
         @RequestParam passwordRepeat: String,
     ): String {
         val fieldErrors: MutableList<String> = mutableListOf()
-        model["fieldErrors"] = fieldErrors
+        model["registrationCodeFieldError"] = false
+        model["usernameFieldError"] = false
+        model["passwordFieldError"] = false
         model["registrationCode"] = registrationCode
         model["username"] = username
 
         val registrationCodeDoc = registrationCodeService.findRegistrationCode(registrationCode)
 
         if (registrationCodeDoc == null) {
-            fieldErrors.add("registrationCode")
+            model["registrationCodeFieldError"] = true
             return "signup"
         }
 
         if (userService.userExists(username)) {
-            fieldErrors.add("username")
+            model["usernameFieldError"] = true
             return "signup"
         }
 
-        if (password !== passwordRepeat) {
-            fieldErrors.add("password")
-            fieldErrors.add("passwordRepeat")
+        if (password != passwordRepeat) {
+            model["passwordFieldError"] = true
             return "signup"
         }
 

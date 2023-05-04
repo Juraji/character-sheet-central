@@ -37,6 +37,8 @@ class CentralRegistrationCodeService(
         return findOneDocumentBySelector(selector)
     }
 
+    fun findAllUnclaimed(): List<CentralRegistrationCode> = findDocumentsBySelector(query())
+
     fun createRegistrationCode(name: String): CentralRegistrationCode {
         val registrationCode = CentralRegistrationCode(
             name = name,

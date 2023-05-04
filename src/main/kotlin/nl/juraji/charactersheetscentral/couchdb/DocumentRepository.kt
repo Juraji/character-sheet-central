@@ -6,8 +6,10 @@ import nl.juraji.charactersheetscentral.couchdb.documents.SaveType
 import nl.juraji.charactersheetscentral.couchdb.find.*
 import nl.juraji.charactersheetscentral.couchdb.indexes.CreateIndexOp
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.stereotype.Component
 import kotlin.reflect.KClass
 
+@Component
 abstract class DocumentRepository<T : CentralDocument>(
     private val couchDb: CouchDbService
 ) {

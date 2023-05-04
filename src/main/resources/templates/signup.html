@@ -25,25 +25,27 @@
                             <label for="registrationCodeInput" class="form-label">Enter your registration code</label>
                             <input class="form-control" id="registrationCodeInput" name="registrationCode" required
                                    th:value="${registrationCode}"
-                                   th:classappend="${fieldErrors.containsKey('registrationCode')}? 'is-invalid'"/>
-                            <div class="invalid-feedback" th:text="${fieldErrors.get('registrationCode')}"></div>
+                                   th:classappend="${registrationCodeFieldError}? 'is-invalid'"/>
+                            <div th:if="registrationCodeFieldError" class="invalid-feedback">This is not a valid registration code.</div>
                         </div>
                         <div class="mb-3">
                             <label for="usernameInput" class="form-label">Choose a username</label>
                             <input class="form-control" id="usernameInput" name="username" required minlength="3"
                                    th:value="${param.username}"
-                                   th:classappend="${fieldErrors.containsKey('username')}? 'is-invalid'"/>
+                                   th:classappend="${usernameFieldError}? 'is-invalid'"/>
+                            <div th:if="usernameFieldError" class="invalid-feedback">A user with that username already exists.</div>
                         </div>
                         <div class="mb-3">
                             <label for="passwordInput" class="form-label">Enter a password</label>
                             <input class="form-control" type="password" id="passwordInput" name="password" required minlength="3"
-                                   th:classappend="${fieldErrors.containsKey('password')}? 'is-invalid'"/>
+                                   th:classappend="${passwordFieldError}? 'is-invalid'"/>
                         </div>
                         <div class="mb-3">
                             <label for="passwordRepeatInput" class="form-label">Enter your password again</label>
                             <input class="form-control" type="password" id="passwordRepeatInput" name="passwordRepeat" required
                                    minlength="3"
-                                   th:classappend="${fieldErrors.containsKey('passwordRepeat')}? 'is-invalid'"/>
+                                   th:classappend="${passwordFieldError}? 'is-invalid'"/>
+                            <div th:if="passwordFieldError" class="invalid-feedback">Password fields do not match.</div>
                         </div>
 
                         <button class="btn btn-block btn-primary" type="submit">Create account</button>

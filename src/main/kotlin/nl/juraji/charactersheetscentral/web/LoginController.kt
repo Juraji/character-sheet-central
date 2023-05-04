@@ -13,7 +13,7 @@ class LoginController {
         @AuthenticationPrincipal userDetails: UserDetails?,
     ): String {
         if (userDetails != null) {
-            return "redirect:/user/home"
+            return "redirect:/members"
         }
 
         return "login"

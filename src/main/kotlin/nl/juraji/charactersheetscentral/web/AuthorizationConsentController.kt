@@ -46,7 +46,6 @@ class AuthorizationConsentController(
         model.addAttribute("state", state)
         model.addAttribute("scopes", withDescription(scopesToApprove))
         model.addAttribute("previouslyApprovedScopes", withDescription(previouslyApprovedScopes))
-        model.addAttribute("principalName", principal.name)
 
         return "consent"
     }

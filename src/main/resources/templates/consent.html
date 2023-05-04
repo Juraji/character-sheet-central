@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
 <head>
     <title>Character Sheets Central - App Consent</title>
     <th:block th:insert="~{fragments/header.fragment :: headerFiles}"></th:block>
@@ -27,7 +30,7 @@
                             The application
                             <span class="font-weight-bold text-info" th:text="${clientId}"></span>
                             wants to access your account
-                            <span class="font-weight-bold" th:text="${principalName}"></span>.
+                            <span class="font-weight-bold" sec:authentication="principal.username"></span>.
                         </p>
                         <p>
                             The following permissions are requested by the above app.<br/>Please review
