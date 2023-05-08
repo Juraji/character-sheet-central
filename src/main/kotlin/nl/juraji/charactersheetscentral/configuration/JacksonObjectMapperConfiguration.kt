@@ -2,7 +2,9 @@ package nl.juraji.charactersheetscentral.configuration
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.datatype.jsr310.deser.DurationDeserializer
 import com.fasterxml.jackson.datatype.jsr310.deser.InstantDeserializer
+import com.fasterxml.jackson.datatype.jsr310.ser.DurationSerializer
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.springframework.context.annotation.Bean
@@ -18,8 +20,14 @@ class JacksonObjectMapperConfiguration {
         .modules(KotlinModule.Builder().build())
         .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE)
         .serializationInclusion(JsonInclude.Include.NON_NULL)
-        .serializers(InstantSerializer.INSTANCE)
-        .deserializers(InstantDeserializer.INSTANT)
+        .serializers(
+            InstantSerializer.INSTANCE,
+            DurationSerializer.INSTANCE
+        )
+        .deserializers(
+            InstantDeserializer.INSTANT,
+            DurationDeserializer.INSTANCE
+        )
         .featuresToEnable(
             MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS,
             SerializationFeature.WRITE_DATES_WITH_ZONE_ID,

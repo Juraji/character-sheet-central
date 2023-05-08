@@ -7,12 +7,8 @@ import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.core.session.SessionRegistryImpl
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.session.HttpSessionEventPublisher
-import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.CorsConfigurationSource
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import java.security.SecureRandom
 
 
@@ -43,21 +39,6 @@ class ApiSecurityConfiguration {
             }
             .logout { it.permitAll() }
         return http.build()
-    }
-
-    @Bean
-    fun corsConfigurationSource(
-        clients: RegisteredClientRepository
-    ): CorsConfigurationSource {
-        val config = CorsConfiguration()
-        config.addAllowedOrigin("http://localhost:8080")
-
-
-        config.addAllowedHeader("*")
-        config.addAllowedMethod("*")
-        val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/oauth2/**", config)
-        return source
     }
 
     @Bean

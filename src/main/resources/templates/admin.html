@@ -49,11 +49,9 @@
                             <td th:text="${code.code}"></td>
                             <td th:text="${#temporals.format(code.expiresAt, 'SHORT')}"></td>
                             <td>
-                                <form method="get" th:action="@{/admin/registration-codes}">
+                                <form method="get" th:action="@{/admin/registration-codes/delete}">
                                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                    <input type="hidden" name="action" value="DELETE"/>
                                     <input type="hidden" name="id" th:value="${code.id}"/>
-                                    <input type="hidden" name="name" value="NONE"/>
                                     <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                                 </form>
                             </td>
@@ -62,14 +60,55 @@
                     </table>
 
                     <form id="registrationCodeForm" name="registration-code-form" method="post"
-                          th:action="@{/admin/registration-codes}">
+                          th:action="@{/admin/registration-codes/create}">
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                        <input type="hidden" name="action" value="CREATE"/>
-                        <input type="hidden" name="id" value="NONE"/>
                         <div class="row">
                             <label for="registrationNameInput" class="col-sm-3 col-form-label">Name</label>
                             <div class="col-sm-6">
                                 <input id="registrationNameInput" name="name" class="form-control" required/>
+                            </div>
+                            <div class="col-sm-3">
+                                <button class="btn btn-primary">Add</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">OAuth clients</h4>
+
+                    TODO: Implement client manager?
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Client id</th>
+                            <th scope="col">Redirect uris</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="client: ${oAuthClients}">
+                            <th scope="row" th:text="${client.clientName}"></th>
+                            <td th:text="${client.clientId}"></td>
+                            <td>
+                                <ul class="list-unstyled">
+                                    <li th:each="uri: ${client.redirectUris}" th:text="${uri}"></li>
+                                </ul>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <form id="createOAuthClientForm" name="create-oauth-client-form" method="post"
+                          th:action="@{/admin/oauth-clients/create}">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <div class="row">
+                            <label for="oAuthClientIdInput" class="col-sm-3 col-form-label">Client id</label>
+                            <div class="col-sm-6">
+                                <input id="oAuthClientIdInput" name="clientId" class="form-control" required/>
                             </div>
                             <div class="col-sm-3">
                                 <button class="btn btn-primary">Add</button>

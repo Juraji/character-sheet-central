@@ -4,6 +4,8 @@ import com.nimbusds.jose.jwk.JWKSet
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext
+import nl.juraji.charactersheetscentral.services.oauth.CentralOAuthClient
+import nl.juraji.charactersheetscentral.services.oauth.CentralOAuthClientService
 import nl.juraji.charactersheetscentral.util.jose.generateRsa
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -17,6 +19,10 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import java.net.URI
 import java.util.*
 
 
@@ -25,8 +31,14 @@ class AuthorizationServiceConfig {
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
-    fun authorizationServerSecurityFilterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
+    fun authorizationServerSecurityFilterChain(
+        httpSecurity: HttpSecurity,
+        corsConfigurationSource: CorsConfigurationSource
+    ): SecurityFilterChain {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(httpSecurity)
+
+        httpSecurity
+            .cors().configurationSource(corsConfigurationSource)
 
         httpSecurity
             .getConfigurer(OAuth2AuthorizationServerConfigurer::class.java)
@@ -54,4 +66,23 @@ class AuthorizationServiceConfig {
     @Bean
     fun authorizationServerSettings(): AuthorizationServerSettings =
         AuthorizationServerSettings.builder().build()
+
+    @Bean
+    fun corsConfigurationSource(
+        oAuthClientService: CentralOAuthClientService,
+    ): CorsConfigurationSource {
+        val config = CorsConfiguration()
+
+        // Allow origins of all OAuth clients by callback url
+        oAuthClientService.findAll()
+            .flatMap(CentralOAuthClient::redirectUris)
+            .map { URI(it).resolve("/").toString() }
+            .forEach(config::addAllowedOrigin)
+
+        config.addAllowedHeader("*")
+        config.addAllowedMethod("*")
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", config)
+        return source
+    }
 }
