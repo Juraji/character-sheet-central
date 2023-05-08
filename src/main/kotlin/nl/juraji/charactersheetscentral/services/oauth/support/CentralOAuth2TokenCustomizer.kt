@@ -22,7 +22,7 @@ class CentralOAuth2TokenCustomizer(
     private fun augmentIdToken(context: JwtEncodingContext) {
         context.authorization?.let {
             context.claims.claim(CLAIM_COUCH_DB_USERNAME, it.id)
-            context.claims.claim(CLAIM_COUCH_DB_NAME, config.userDbPrefix + it.principalName)
+            context.claims.claim(CLAIM_COUCH_DB_NAME, config.userDbName(it.principalName))
         }
         context.getPrincipal<Authentication>().authorities
             .map(GrantedAuthority::getAuthority)
